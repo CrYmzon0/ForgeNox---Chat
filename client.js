@@ -47,7 +47,7 @@ function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
 
-  // direkt anzeigen
+  // eigene Nachricht sofort anzeigen
   addMessage({ text, fromSelf: true, userName: username });
 
   // an Server schicken
