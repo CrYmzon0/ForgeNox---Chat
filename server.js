@@ -1,61 +1,34 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Statische Dateien direkt aus dem gleichen Ordner ausliefern
+// Statische Dateien direkt aus dem aktuellen Verzeichnis
 app.use(express.static(__dirname));
 
-io.on("connection", (socket) => {
-  console.log("Client verbunden:", socket.id);
+// Optional: Standardroute auf login.html oder chat.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html')); // oder 'chat.html'
+});
 
-  // Raum betreten
-  socket.on("joinRoom", (room, username) => {
-    if (!room) room = "lobby";
-    socket.join(room);
-    socket.data.room = room;
-    socket.data.username = username || "Gast";
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
 
-    socket.to(room).emit("systemMessage", {
-      message: `${socket.data.username} hat den Raum betreten.`,
-      ts: Date.now(),
-    });
+  socket.on('chat-message', (data) => {
+    // an alle anderen senden
+    socket.broadcast.emit('chat-message', data);
   });
 
-  // Chatnachricht im Raum senden
-  socket.on("chatMessage", (text) => {
-    const room = socket.data.room || "lobby";
-    const username = socket.data.username || "Gast";
-
-    if (!text || !text.trim()) return;
-
-    io.to(room).emit("chatMessage", {
-      user: username,
-      message: text.trim(),
-      ts: Date.now(),
-    });
-  });
-
-  // Disconnect
-  socket.on("disconnect", () => {
-    const room = socket.data.room;
-    const username = socket.data.username;
-
-    if (room && username) {
-      socket.to(room).emit("systemMessage", {
-        message: `${username} hat den Raum verlassen.`,
-        ts: Date.now(),
-      });
-    }
-
-    console.log("Client getrennt:", socket.id);
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server läuft auf http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server läuft auf Port ${PORT}`);
 });
