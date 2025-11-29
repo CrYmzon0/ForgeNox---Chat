@@ -1,61 +1,52 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Forge-Nox | Livechat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="forge-nox-chat.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForgeNox Chat</title>
+    <link rel="stylesheet" href="forge-nox-chat.css">
 </head>
-<body class="fn-body">
+<body>
 
-  <div class="fn-chat-layout">
+<div class="fn-wrapper">
 
-    <!-- CHATBEREICH -->
-    <section class="fn-chat-window">
-     <header class="fn-chat-header fn-chat-header-center">
-  <h2 class="fn-logo-chat">ForgeNox</h2>
-  <div class="fn-room-name">Raum: Hauptlobby</div>
-</header>
+    <!-- Haupt-Chatbereich -->
+    <div class="fn-chat-container">
 
-      <div class="fn-chat-messages" id="messages">
-        <!-- Beispielnachrichten (nur Layout-Platzhalter) -->
-        <div class="fn-msg fn-msg-other">
+        <!-- Header -->
+        <div class="fn-chat-header">
+            <h2>ForgeNox</h2>
+            <p>Raum: Hauptlobby</p>
         </div>
-      </div>
 
-      <footer class="fn-chat-input">
-        <input type="text" id="chatInput" placeholder="Nachricht eingeben..." />
-        <button id="sendBtn">Senden</button>
-      </footer>
-    </section>
+        <!-- Nachrichtenbereich -->
+        <div class="fn-chat-messages" id="messages">
+            <!-- Nachrichten werden dynamisch per JS eingefügt -->
+        </div>
 
-    <!-- USERLISTE -->
-    <aside class="fn-userlist">
-      <div class="fn-userlist-search">
-        <input type="text" placeholder="User suchen..." />
-      </div>
+        <!-- Eingabe -->
+        <div class="fn-chat-input-area">
+            <input type="text" id="chatInput" placeholder="Nachricht eingeben..." />
+            <button id="sendBtn">Senden</button>
+        </div>
 
-      <ul class="fn-userlist-list" id="userList">
-  <!-- Dynamisch gefüllt via JS -->
-</ul>
+    </div>
 
-    </aside>
+    <!-- Rechte Sidebar / Userliste -->
+    <div class="fn-userlist-container">
+        <input class="fn-usersearch" type="text" placeholder="User suchen..." disabled>
+        <ul class="fn-userlist" id="userList">
+            <!-- User werden dynamisch per JS eingefügt -->
+        </ul>
+    </div>
 
-  </div>
-  <!-- Socket.IO Client wird vom Server ausgeliefert -->
+</div>
+
+<!-- Socket.IO -->
 <script src="/socket.io/socket.io.js"></script>
-<!-- Dein Client-Code -->
-<script src="/client.js"></script>
-</body>
-<script>
-  const input = document.getElementById("chatInput");
-  const send = document.getElementById("sendBtn");
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      send.click();
-    }
-  });
-</script>
+<!-- Client-Logik -->
+<script src="/client.js"></script>
+
+</body>
 </html>
