@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Forge-Nox | Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="forge-nox-login.css" />
+</head>
+<body class="fn-body">
+  <div class="fn-bg-gradient"></div>
+
+  <main class="fn-container">
+    <section class="fn-card">
+      <h1 class="fn-logo">Forge<span>Nox</span></h1>
+      <p class="fn-subtitle">Betritt die Schmiede.</p>
+
+      <form class="fn-form" action="#" method="post" novalidate>
+        <label class="fn-label">
+          Benutzername
+          <input
+            type="text"
+            name="username"
+            class="fn-input"
+            placeholder="Dein Name"
+            required
+          />
+        </label>
+
+        <label class="fn-label">
+          Geschlecht
+          <select name="gender" class="fn-select" required>
+            <option value="" disabled selected hidden>Bitte auswählen</option>
+            <option value="male">♂️Männlich</option>
+            <option value="female">♀️Weiblich</option>
+            <option value="diverse">⚧️Divers</option>
+            <option value="none">⛔Keine Angabe</option>
+          </select>
+        </label>
+
+        <label class="fn-checkbox">
+          <input type="checkbox" name="rules" required />
+          <span>
+            Ich habe die
+            <a href="#" target="_blank">Regeln von Forge-Nox</a>
+            gelesen und akzeptiere sie.
+          </span>
+        </label>
+        <button type="submit" class="fn-btn-primary">
+          Forge-Nox betreten
+        </button>
+        <ul class="fn-error-box"></ul>
+      </form>
+
+      <p class="fn-footer-hint">
+        Kein Konto? Registrierung folgt später.
+      </p>
+    </section>
+  </main>
+
+<script>
+  const form = document.querySelector(".fn-form");
+  const username = form.querySelector("input[name='username']");
+  const gender = form.querySelector("select[name='gender']");
+  const rules = form.querySelector("input[name='rules']");
+
+  form.addEventListener("submit", function (e) {
+    let errors = [];
+
+    // Benutzername prüfen
+    const nameValue = username.value.trim();
+
+    if (!nameValue) {
+      errors.push("Bitte wähle einen Benutzernamen.");
+    } else {
+      const hasSpecialChars = /[^a-zA-Z0-9]/.test(nameValue);
+      const letters = nameValue.replace(/[0-9]/g, "");
+      const numbers = nameValue.replace(/[^0-9]/g, "");
+
+      if (letters.length < 3) {
+        errors.push("Der Benutzername muss mindestens 3 Buchstaben enthalten.");
+      }
+      if (hasSpecialChars) {
+        errors.push("Der Benutzername darf keine Sonderzeichen enthalten.");
+      }
+      if (numbers.length > 4) {
+        errors.push("Der Benutzername darf maximal 4 Zahlen enthalten.");
+      }
+    }
+
+    // Geschlecht prüfen
+    if (!gender.value) {
+      errors.push("Bitte wähle ein Geschlecht.");
+    }
+
+    // Regeln prüfen
+    if (!rules.checked) {
+      errors.push("Bitte bestätige die Regeln von Forge-Nox.");
+    }
+
+    if (errors.length > 0) {
+      e.preventDefault();
+      showErrors(errors);
+    } else {
+      clearErrors();
+      // hier später echtes Login / Redirect
+    }
+  });
+
+  function showErrors(list) {
+    const box = document.querySelector(".fn-error-box");
+    box.innerHTML = list.map((e) => `<li>${e}</li>`).join("");
+    box.style.display = "block";
+  }
+
+  function clearErrors() {
+    const box = document.querySelector(".fn-error-box");
+    box.innerHTML = "";
+    box.style.display = "none";
+  }
+</script>
+</body>
+</html>
