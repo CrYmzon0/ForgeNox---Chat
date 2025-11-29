@@ -220,3 +220,39 @@ body.fn-body {
   color: var(--fn-text-muted);
   margin-top: 2px;
 }
+
+/* ============================================
+   USERLISTEN-EINTRÄGE (ForgeNox-Style)
+   ============================================ */
+
+.fn-userlist-item {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 8px 0;
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.03); /* leichte Transparenz */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  font-size: 1.05rem;
+  color: #e8e4fc;
+  letter-spacing: 0.5px;
+
+  transition: 0.18s ease-in-out;
+  cursor: default;
+}
+
+/* Hover-Effekt */
+.fn-userlist-item:hover {
+  background: rgba(137, 96, 255, 0.12);
+  border-color: rgba(137, 96, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Optional: Wenn du Avatare oder Icons willst */
+.fn-userlist-item::before {
+  content: "•";
+  color: #9a6aff;
+  margin-right: 8px;
+  font-size: 1.3rem;
+}
