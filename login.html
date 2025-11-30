@@ -14,7 +14,8 @@
       <h1 class="fn-logo">Forge<span>Nox</span></h1>
       <p class="fn-subtitle">Betritt die Schmiede.</p>
 
-      <form class="fn-form" action="#" method="post" novalidate>
+      <!-- WICHTIGE ÄNDERUNG HIER -->
+      <form class="fn-form" action="/login" method="post" novalidate>
         <label class="fn-label">
           Benutzername
           <input
@@ -45,9 +46,11 @@
             gelesen und akzeptiere sie.
           </span>
         </label>
+
         <button type="submit" class="fn-btn-primary">
           Forge-Nox betreten
         </button>
+
         <ul class="fn-error-box"></ul>
       </form>
 
@@ -64,56 +67,48 @@
   const rules = form.querySelector("input[name='rules']");
 
   form.addEventListener("submit", function (e) {
-  let errors = [];
+    let errors = [];
 
-  // Benutzername prüfen
-  const nameValue = username.value.trim();
+    // Benutzername prüfen
+    const nameValue = username.value.trim();
 
-  if (!nameValue) {
-    errors.push("Bitte wähle einen Benutzernamen.");
-  } else {
-    const hasSpecialChars = /[^a-zA-Z0-9]/.test(nameValue);
-    const letters = nameValue.replace(/[0-9]/g, "");
-    const numbers = nameValue.replace(/[^0-9]/g, "");
+    if (!nameValue) {
+      errors.push("Bitte wähle einen Benutzernamen.");
+    } else {
+      const hasSpecialChars = /[^a-zA-Z0-9]/.test(nameValue);
+      const letters = nameValue.replace(/[0-9]/g, "");
+      const numbers = nameValue.replace(/[^0-9]/g, "");
 
-    if (letters.length < 3) {
-      errors.push("Der Benutzername muss mindestens 3 Buchstaben enthalten.");
+      if (letters.length < 3) {
+        errors.push("Der Benutzername muss mindestens 3 Buchstaben enthalten.");
+      }
+      if (hasSpecialChars) {
+        errors.push("Der Benutzername darf keine Sonderzeichen enthalten.");
+      }
+      if (numbers.length > 4) {
+        errors.push("Der Benutzername darf maximal 4 Zahlen enthalten.");
+      }
     }
-    if (hasSpecialChars) {
-      errors.push("Der Benutzername darf keine Sonderzeichen enthalten.");
+
+    // Geschlecht prüfen
+    if (!gender.value) {
+      errors.push("Bitte wähle ein Geschlecht.");
     }
-    if (numbers.length > 4) {
-      errors.push("Der Benutzername darf maximal 4 Zahlen enthalten.");
+
+    // Regeln prüfen
+    if (!rules.checked) {
+      errors.push("Bitte bestätige die Regeln von Forge-Nox.");
     }
-  }
 
-  // Geschlecht prüfen
-  if (!gender.value) {
-    errors.push("Bitte wähle ein Geschlecht.");
-  }
+    if (errors.length > 0) {
+      e.preventDefault();
+      showErrors(errors);
+      return;
+    }
 
-  // Regeln prüfen
-  if (!rules.checked) {
-    errors.push("Bitte bestätige die Regeln von Forge-Nox.");
-  }
-
-  if (errors.length > 0) {
-    e.preventDefault();
-    showErrors(errors);
-  } else {
-    // WICHTIG: Formular nicht abschicken, sondern clientseitig weiterleiten
-    e.preventDefault();
+    // Erfolgsfall: Fehler leeren, Formular NORMAL abschicken
     clearErrors();
-
-    // Optional: Username & Gender an chat.html übergeben
-    const params = new URLSearchParams({
-      username: nameValue,
-      gender: gender.value
-    });
-
-    window.location.href = "chat.html?" + params.toString();
-  }
-});
+  });
 
   function showErrors(list) {
     const box = document.querySelector(".fn-error-box");

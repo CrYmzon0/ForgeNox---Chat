@@ -6,9 +6,35 @@ const path = require("path");
 // eigenes Modul für Systemnachrichten
 const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+const crypto = require("crypto");
+const sessions = {}; // sessionId -> { username, gender }
+
+app.post("/login", (req, res) => {
+  const { username, gender } = req.body;
+
+  if (!username || !gender) {
+    return res.redirect("/");
+  }
+
+  const sessionId = crypto.randomUUID();
+  sessions[sessionId] = { username, gender };
+
+  res.cookie("sessionId", sessionId, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: true
+  });
+
+  res.redirect("/chat");
+});
 
 // Statische Dateien aus dem aktuellen Verzeichnis ausliefern
 app.use(express.static(__dirname));
@@ -80,4 +106,18 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
+});
+
+app.get("/chat", (req, res) => {
+  // Chat nur anzeigen, wenn Session vorhanden
+  if (!req.cookies || !req.cookies.sessionId || !sessions[req.cookies.sessionId]) {
+    return res.redirect("/");
+  }
+
+  res.sendFile(path.join(__dirname, "chat.html"));
+});
+
+// Falls jemand /chat.html direkt aufruft → redirect
+app.get("/chat.html", (req, res) => {
+  res.redirect("/chat");
 });
