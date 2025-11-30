@@ -37,16 +37,18 @@ app.post("/login", (req, res) => {
     gender,
     lastActive: Date.now(),
     away: false,
-    timeoutHandle: null
+    timeoutHandle: null,
   };
 
+  // Cookie setzen
   res.cookie("sessionId", sessionId, {
-  httpOnly: true,
-  sameSite: "strict",
-  secure: false   // oder ganz weglassen
-});
+    httpOnly: true,
+    sameSite: "strict",
+    secure: false
+  });
 
-  res.redirect("/chat");
+  // 🔥 NEU: sessionId zusätzlich in der URL mitgeben als Fallback
+  res.redirect(`/chat?sid=${sessionId}`);
 });
 
 // LOGIN-SEITE
@@ -56,9 +58,20 @@ app.get("/", (req, res) => {
 
 // LOGIN-SCHUTZ
 app.get("/chat", (req, res) => {
-  const sid = req.cookies.sessionId;
+  // 🔥 NEU: Fallback – erst Cookie, dann Query-Parameter
+  const sid = req.cookies.sessionId || req.query.sid;
+
   if (!sid || !sessions[sid]) {
     return res.redirect("/");
+  }
+
+  // Falls Cookie fehlt, aber sid über URL kommt → Cookie nachziehen
+  if (!req.cookies.sessionId) {
+    res.cookie("sessionId", sid, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false
+    });
   }
 
   res.sendFile(path.join(__dirname, "chat.html"));
@@ -71,7 +84,8 @@ app.get("/chat.html", (req, res) => {
 
 // /me Endpoint (für client.js)
 app.get("/me", (req, res) => {
-  const sid = req.cookies.sessionId;
+  const sid = req.cookies.sessionId || req.query.sid;
+
   if (!sid || !sessions[sid]) {
     return res.json({ username: "Gast", gender: "none" });
   }
@@ -97,14 +111,13 @@ io.on("connection", (socket) => {
     users.set(socket.id, {
       username: cleanName,
       gender: gender || "",
-      away: false
+      away: false,
     });
 
     console.log("User registered:", socket.id, cleanName);
 
     io.emit("user-list", getUserList());
 
-    // ⚠️ später angepasst für ReLogin-Logik
     emitUserJoined(io, cleanName);
   });
 
@@ -128,7 +141,7 @@ io.on("connection", (socket) => {
 
     if (user) {
       const sessionId = Object.keys(sessions).find(
-        sid => sessions[sid].username === user.username
+        (sid) => sessions[sid].username === user.username
       );
 
       if (sessionId && userStates[sessionId]) {
