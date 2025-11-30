@@ -125,4 +125,13 @@ app.get("/chat.html", (req, res) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
+  
+});
+app.get("/me", (req, res) => {
+  const { sessionId } = req.cookies;
+  if (!sessionId || !sessions[sessionId]) {
+    return res.json({ username: "Gast", gender: "none" });
+  }
+
+  res.json(sessions[sessionId]);
 });

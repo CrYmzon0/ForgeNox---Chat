@@ -8,10 +8,9 @@ const inputEl = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const userListEl = document.getElementById("userList");
 
-// Username/Geschlecht aus der URL (von login.html)
-const params = new URLSearchParams(window.location.search);
-let username = params.get("username") || "Gast";
-let gender = params.get("gender") || "";
+// Username und Gender werden NICHT mehr aus der URL gelesen
+let username = "";
+let gender = "";
 
 // Nachricht im Chat anzeigen
 function addMessage({ text, fromSelf = false, userName = "" }) {
@@ -22,10 +21,8 @@ function addMessage({ text, fromSelf = false, userName = "" }) {
   const meta = document.createElement("div");
   meta.classList.add("fn-msg-meta");
 
-  // Immer den tatsächlichen Username anzeigen
   const displayName = userName || "User";
 
-  // WICHTIG: Zeit IMMER im Client berechnen (keine Serverzeit mehr)
   const displayTime = new Date().toLocaleTimeString("de-DE", {
     hour: "2-digit",
     minute: "2-digit",
@@ -49,10 +46,8 @@ function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
 
-  // eigene Nachricht sofort anzeigen (mit eigenem Username)
   addMessage({ text, fromSelf: true, userName: username });
 
-  // an Server schicken (ohne Zeit, die ist egal)
   socket.emit("chat-message", { text });
 
   inputEl.value = "";
@@ -72,11 +67,22 @@ inputEl.addEventListener("keydown", (e) => {
   }
 });
 
-// Beim Verbinden User registrieren
-socket.emit("register-user", {
-  username,
-  gender,
-});
+// --------------------------------------------------
+// NEU: Username & Gender sicher vom Server holen
+// --------------------------------------------------
+
+fetch("/me")
+  .then(res => res.json())
+  .then(data => {
+    username = data.username || "Gast";
+    gender = data.gender || "";
+
+    // Registrierung erst NACH Login-Daten
+    socket.emit("register-user", {
+      username,
+      gender,
+    });
+  });
 
 // Nachrichten von anderen empfangen
 socket.on("chat-message", (data) => {
