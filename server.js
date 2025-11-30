@@ -3,6 +3,9 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 
+// eigenes Modul für Systemnachrichten
+const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -19,14 +22,13 @@ app.get("/", (req, res) => {
 const users = new Map();
 
 function getUserList() {
-  // gibt ein Array wie [{ username: 'Max', gender: 'male' }, ...] zurück
   return Array.from(users.values());
 }
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Wenn sich ein Client registriert (kommt aus client.js -> socket.emit("register-user", ...))
+  // Client meldet seinen Usernamen an
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
@@ -34,44 +36,44 @@ io.on("connection", (socket) => {
       username: cleanName,
       gender: gender || "",
     });
-    emitUserJoined(io, cleanName);
 
     console.log("User registered:", socket.id, cleanName);
 
-    // aktualisierte Userliste an alle senden
+    // Userliste an alle
     io.emit("user-list", getUserList());
+
+    // Systemmeldung: User hat den Chat betreten
+    emitUserJoined(io, cleanName);
   });
 
   // Chat-Nachricht eines Clients
   socket.on("chat-message", (data) => {
-  const user = users.get(socket.id);
-  const text = (data && data.text ? data.text : "").toString().trim();
-  if (!text) return;
+    const user = users.get(socket.id);
+    const text = (data && data.text ? data.text : "").toString().trim();
+    if (!text) return;
 
-  const username = user?.username || "User";
-  const time = new Date().toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    const username = user?.username || "User";
 
-  // Nur an die anderen Clients senden (nicht an den Sender)
-  socket.broadcast.emit("chat-message", {
-    text,
-    username,
-    time,
+    // Nachricht an alle anderen Clients (nicht an den Sender)
+    socket.broadcast.emit("chat-message", {
+      text,
+      username,
+    });
   });
-});
 
   // Disconnect
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-    users.delete(socket.id);
-    if (user) {
-  emitUserLeft(io, user.username);
-}
+    const user = users.get(socket.id);      // ← DAS hat bei dir gefehlt
 
-    // Userliste nach Entfernen aktualisieren
-    io.emit("user-list", getUserList());
+    if (user) {
+      // Systemmeldung: User hat den Chat verlassen
+      emitUserLeft(io, user.username);
+
+      users.delete(socket.id);
+      io.emit("user-list", getUserList());
+    }
+
+    console.log("Client disconnected:", socket.id);
   });
 });
 
@@ -79,5 +81,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
 });
-
-const { emitUserJoined, emitUserLeft } = require("./system-messages-server");

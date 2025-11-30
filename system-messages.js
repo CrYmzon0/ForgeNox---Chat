@@ -2,11 +2,9 @@
 // Kümmert sich NUR um Systemnachrichten (Join/Leave)
 
 (function () {
-  // vorhandene Socket-Verbindung wiederverwenden, falls vorhanden
-  const socket = window.socket || io();
-
+  const socket = window.socket;
   const messagesEl = document.getElementById("messages");
-  if (!messagesEl) return;
+  if (!socket || !messagesEl) return;
 
   function addSystemMessage(text, type) {
     const wrapper = document.createElement("div");
@@ -28,7 +26,6 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  // Listener für Systemmessages vom Server
   socket.on("system-message", (data) => {
     if (!data || !data.text) return;
     addSystemMessage(data.text, data.type);
