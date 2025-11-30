@@ -117,12 +117,13 @@ body.fn-body {
   color: #0b0614;
 }
 
-/* Blase selbst */
+/* Blase selbst – kompakter */
 .fn-msg-bubble {
-  padding: 10px 14px;
+  padding: 4px 10px;      /* weniger Luft rundherum */
   border-radius: 14px;
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.2;       /* engerer Zeilenabstand */
+  text-align: left;       /* Sicherheit: Text klar linksbündig */
 }
 
 /* INPUT-BEREICH */
@@ -255,18 +256,4 @@ body.fn-body {
   color: #9a6aff;
   margin-right: 8px;
   font-size: 1.3rem;
-}
-/* Abstand zwischen Messages straffen */
-.fn-msg {
-  margin: 6px 0;              /* vertikaler Abstand zwischen den Nachrichten */
-}
-
-/* Abstand zwischen Name/Uhrzeit und Bubble verkleinern */
-.fn-msg-meta {
-  margin-bottom: 2px;          /* früher vermutlich größer */
-}
-
-/* Falls auf der Bubble irgendwo margin-top gesetzt war -> killen */
-.fn-msg-bubble {
-  margin-top: 0;
 }
