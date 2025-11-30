@@ -1,3 +1,4 @@
+// client.js
 // eine globale Socket-Verbindung für alle Scripts
 window.socket = window.socket || io();
 const socket = window.socket;
@@ -67,10 +68,7 @@ inputEl.addEventListener("keydown", (e) => {
   }
 });
 
-// --------------------------------------------------
 // Username & Gender sicher vom Server holen
-// --------------------------------------------------
-
 fetch("/me")
   .then((res) => res.json())
   .then((data) => {

@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -47,7 +48,7 @@ app.post("/login", (req, res) => {
     secure: false
   });
 
-  // 🔥 NEU: sessionId zusätzlich in der URL mitgeben als Fallback
+  // sessionId zusätzlich in der URL als Fallback
   res.redirect(`/chat?sid=${sessionId}`);
 });
 
@@ -58,7 +59,7 @@ app.get("/", (req, res) => {
 
 // LOGIN-SCHUTZ
 app.get("/chat", (req, res) => {
-  // 🔥 NEU: Fallback – erst Cookie, dann Query-Parameter
+  // Fallback – erst Cookie, dann Query-Parameter
   const sid = req.cookies.sessionId || req.query.sid;
 
   if (!sid || !sessions[sid]) {
@@ -86,11 +87,17 @@ app.get("/chat.html", (req, res) => {
 app.get("/me", (req, res) => {
   const sid = req.cookies.sessionId || req.query.sid;
 
+  // WICHTIG: jetzt mit loggedIn-Flag
   if (!sid || !sessions[sid]) {
-    return res.json({ username: "Gast", gender: "none" });
+    return res.json({ loggedIn: false });
   }
 
-  res.json(sessions[sid]);
+  const s = sessions[sid];
+  res.json({
+    loggedIn: true,
+    username: s.username,
+    gender: s.gender
+  });
 });
 
 // User-Map: socket.id -> userObject
