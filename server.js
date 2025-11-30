@@ -100,24 +100,14 @@ app.get("/chat", (req, res) => {
   const fromRelogin = req.query.relogin === "1";
 
   // User ist noch in der 2-Minuten-Away-Phase
-  if (state.away && diff < AWAY_TIMEOUT) {
-    if (!fromRelogin) {
-      // noch nicht bestätigt → ReLogin-Screen
-      return res.sendFile(path.join(__dirname, "relogin.html"));
-    }
-
-    // kommt AUS dem ReLogin → Away beenden, Timer stoppen
-    state.away = false;
-    state.lastActive = Date.now();
-    if (state.timeoutHandle) {
-      clearTimeout(state.timeoutHandle);
-      state.timeoutHandle = null;
-    }
-  } else {
-    // normaler Eintritt, nicht away
-    state.away = false;
-    state.lastActive = Date.now();
+  if (state.away && diff < AWAY_TIMEOUT && !fromRelogin) {
+    // Noch nicht „Weiter im Chat“ gedrückt → ReLogin anzeigen
+    return res.sendFile(path.join(__dirname, "relogin.html"));
   }
+
+  // WICHTIG:
+  // Hier NICHT mehr Join/away/timer anfassen – das macht der Socket-Teil
+  // (damit wir bei ReLogin die Join-Message sauber unterdrücken können)
 
   // falls Cookie noch fehlt, jetzt setzen
   if (!req.cookies.sessionId) {
@@ -169,7 +159,7 @@ app.get("/logout", (req, res) => {
       clearTimeout(timeoutHandle);
     }
 
-    // Sofortige Leave-Message beim aktiven Logout
+    // expliziter Logout → sofortige Leave-Message
     emitUserLeft(io, username);
 
     delete userStates[sid];
@@ -248,21 +238,23 @@ io.on("connection", (socket) => {
       const state = userStates[sid];
       const diff = Date.now() - state.lastActive;
 
-      state.lastActive = Date.now();
-
+      // ReJoin innerhalb von 2 Minuten → KEIN Join
       if (state.away && diff < AWAY_TIMEOUT) {
-        // ReLogin innerhalb Grace-Period → kein Join
         state.away = false;
+        state.lastActive = Date.now();
         if (state.timeoutHandle) {
           clearTimeout(state.timeoutHandle);
           state.timeoutHandle = null;
         }
+        // KEINE emitUserJoined hier
       } else {
-        // normaler Beitritt
+        // normaler (neuer) Beitritt → Join-Message senden
         state.away = false;
+        state.lastActive = Date.now();
         emitUserJoined(io, cleanName);
       }
     } else {
+      // kein userState gefunden (Fallback) → normaler Join
       emitUserJoined(io, cleanName);
     }
 
@@ -295,6 +287,7 @@ io.on("connection", (socket) => {
         state.away = true;
         state.lastActive = Date.now();
 
+        // verzögertes Leave
         state.timeoutHandle = setTimeout(() => {
           const diff = Date.now() - state.lastActive;
           if (state.away && diff >= AWAY_TIMEOUT) {
