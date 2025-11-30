@@ -256,3 +256,17 @@ body.fn-body {
   margin-right: 8px;
   font-size: 1.3rem;
 }
+/* Abstand zwischen Messages straffen */
+.fn-msg {
+  margin: 6px 0;              /* vertikaler Abstand zwischen den Nachrichten */
+}
+
+/* Abstand zwischen Name/Uhrzeit und Bubble verkleinern */
+.fn-msg-meta {
+  margin-bottom: 2px;          /* früher vermutlich größer */
+}
+
+/* Falls auf der Bubble irgendwo margin-top gesetzt war -> killen */
+.fn-msg-bubble {
+  margin-top: 0;
+}
