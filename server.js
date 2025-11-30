@@ -58,10 +58,10 @@ app.post("/login", (req, res) => {
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
     sameSite: "strict",
-    secure: false, // wichtig: kein HTTPS-Zwang im Dev
+    secure: false, // im Prod-Betrieb auf true setzen, wenn HTTPS
   });
 
-  // Fallback sid in URL (für Fälle, wo Cookie beim ersten Redirect zickt)
+  // Fallback sid in URL
   res.redirect(`/chat?sid=${sessionId}`);
 });
 
@@ -71,7 +71,6 @@ app.post("/login", (req, res) => {
 app.get("/", (req, res) => {
   const sid = req.cookies.sessionId;
 
-  // keine Session → normaler Login
   if (!sid || !sessions[sid] || !userStates[sid]) {
     return res.sendFile(path.join(__dirname, "login.html"));
   }
@@ -79,12 +78,10 @@ app.get("/", (req, res) => {
   const state = userStates[sid];
   const diff = Date.now() - state.lastActive;
 
-  // innerhalb der 2 Minuten im Away-Status → ReLogin-Screen
   if (state.away && diff < AWAY_TIMEOUT) {
     return res.sendFile(path.join(__dirname, "relogin.html"));
   }
 
-  // Session da, nicht away → direkt in den Chat
   return res.redirect("/chat");
 });
 
@@ -92,7 +89,6 @@ app.get("/", (req, res) => {
 // CHAT – geschützt, behandelt ReLogin
 // --------------------------------------------------
 app.get("/chat", (req, res) => {
-  // Cookie oder Fallback-Query
   const sid = req.cookies.sessionId || req.query.sid;
 
   if (!sid || !sessions[sid] || !userStates[sid]) {
@@ -101,27 +97,35 @@ app.get("/chat", (req, res) => {
 
   const state = userStates[sid];
   const diff = Date.now() - state.lastActive;
+  const fromRelogin = req.query.relogin === "1";
 
-  // Wenn noch in der 2-Minuten-Away-Phase → ReLogin-Screen
+  // User ist noch in der 2-Minuten-Away-Phase
   if (state.away && diff < AWAY_TIMEOUT) {
-    return res.sendFile(path.join(__dirname, "relogin.html"));
+    if (!fromRelogin) {
+      // noch nicht bestätigt → ReLogin-Screen
+      return res.sendFile(path.join(__dirname, "relogin.html"));
+    }
+
+    // kommt AUS dem ReLogin → Away beenden, Timer stoppen
+    state.away = false;
+    state.lastActive = Date.now();
+    if (state.timeoutHandle) {
+      clearTimeout(state.timeoutHandle);
+      state.timeoutHandle = null;
+    }
+  } else {
+    // normaler Eintritt, nicht away
+    state.away = false;
+    state.lastActive = Date.now();
   }
 
-  // wenn Cookie noch nicht gesetzt war, jetzt nachziehen
+  // falls Cookie noch fehlt, jetzt setzen
   if (!req.cookies.sessionId) {
     res.cookie("sessionId", sid, {
       httpOnly: true,
       sameSite: "strict",
       secure: false,
     });
-  }
-
-  // aktiver Chatbesuch → nicht mehr away
-  state.away = false;
-  state.lastActive = Date.now();
-  if (state.timeoutHandle) {
-    clearTimeout(state.timeoutHandle);
-    state.timeoutHandle = null;
   }
 
   res.sendFile(path.join(__dirname, "chat.html"));
@@ -133,7 +137,7 @@ app.get("/chat.html", (req, res) => {
 });
 
 // --------------------------------------------------
-// /relogin – optionaler direkter Endpunkt
+// ReLogin-Seite (optional direkter Zugriff)
 // --------------------------------------------------
 app.get("/relogin", (req, res) => {
   const sid = req.cookies.sessionId;
@@ -146,11 +150,34 @@ app.get("/relogin", (req, res) => {
   const diff = Date.now() - state.lastActive;
 
   if (!(state.away && diff < AWAY_TIMEOUT)) {
-    // keine gültige Grace-Period mehr → normaler Flow
     return res.redirect("/");
   }
 
   res.sendFile(path.join(__dirname, "relogin.html"));
+});
+
+// --------------------------------------------------
+// Logout – Cookie + Session + Timer löschen
+// --------------------------------------------------
+app.get("/logout", (req, res) => {
+  const sid = req.cookies.sessionId;
+
+  if (sid && userStates[sid]) {
+    const { username, timeoutHandle } = userStates[sid];
+
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+
+    // Sofortige Leave-Message beim aktiven Logout
+    emitUserLeft(io, username);
+
+    delete userStates[sid];
+    delete sessions[sid];
+  }
+
+  res.clearCookie("sessionId");
+  return res.redirect("/");
 });
 
 // --------------------------------------------------
@@ -216,7 +243,6 @@ io.on("connection", (socket) => {
 
     console.log("User registered:", socket.id, cleanName);
 
-    // ReLogin-Erkennung
     const sid = findSessionIdByUsername(cleanName);
     if (sid && userStates[sid]) {
       const state = userStates[sid];
@@ -225,19 +251,18 @@ io.on("connection", (socket) => {
       state.lastActive = Date.now();
 
       if (state.away && diff < AWAY_TIMEOUT) {
-        // ReLogin innerhalb der Grace-Period → KEIN Join
+        // ReLogin innerhalb Grace-Period → kein Join
         state.away = false;
         if (state.timeoutHandle) {
           clearTimeout(state.timeoutHandle);
           state.timeoutHandle = null;
         }
       } else {
-        // normaler (neuer) Beitritt → Join-Nachricht
+        // normaler Beitritt
         state.away = false;
         emitUserJoined(io, cleanName);
       }
     } else {
-      // Fallback, falls kein userState gefunden wird
       emitUserJoined(io, cleanName);
     }
 
@@ -270,13 +295,11 @@ io.on("connection", (socket) => {
         state.away = true;
         state.lastActive = Date.now();
 
-        // leave verzögert senden
         state.timeoutHandle = setTimeout(() => {
           const diff = Date.now() - state.lastActive;
           if (state.away && diff >= AWAY_TIMEOUT) {
             emitUserLeft(io, user.username);
 
-            // nach endgültigem Leave Session entfernen
             delete userStates[sessionId];
             delete sessions[sessionId];
           }

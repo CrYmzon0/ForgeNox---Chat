@@ -21,7 +21,7 @@
     fetch("/me")
       .then(r => r.json())
       .then(data => {
-        // Nur wenn eingeloggt UND away → ReLogin erlaubt
+        // nur wenn eingeloggt + away → ReLogin erlaubt
         if (!data.loggedIn || !data.away) {
           window.location.href = "/";
           return;
@@ -30,14 +30,14 @@
         document.getElementById("fn-relogin-user").textContent =
           "Du warst zuletzt eingeloggt als " + data.username;
 
+        // WICHTIG: als bestätigter ReLogin → /chat?relogin=1
         document.getElementById("fn-relogin-continue").onclick = () => {
-          window.location.href = "/chat";
+          window.location.href = "/chat?relogin=1";
         };
 
+        // Logout muss über Server gehen (httpOnly-Cookie!)
         document.getElementById("fn-relogin-logout").onclick = () => {
-          // Cookie invalidieren – Session ist serverseitig nach Timeout eh weg
-          document.cookie = "sessionId=; Max-Age=0; path=/;";
-          window.location.href = "/";
+          window.location.href = "/logout";
         };
       })
       .catch(() => {
