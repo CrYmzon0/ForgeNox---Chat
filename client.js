@@ -13,7 +13,7 @@ let username = params.get("username") || "Gast";
 let gender = params.get("gender") || "";
 
 // Nachricht im Chat anzeigen
-function addMessage({ text, fromSelf = false, userName = "", time = "" }) {
+function addMessage({ text, fromSelf = false, userName = "" }) {
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
   wrapper.classList.add(fromSelf ? "fn-msg-me" : "fn-msg-other");
@@ -21,15 +21,14 @@ function addMessage({ text, fromSelf = false, userName = "", time = "" }) {
   const meta = document.createElement("div");
   meta.classList.add("fn-msg-meta");
 
-  // WICHTIG: Immer Username anzeigen, kein "Du" mehr
+  // Immer den tatsächlichen Username anzeigen
   const displayName = userName || "User";
 
-  const displayTime =
-    time ||
-    new Date().toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  // WICHTIG: Zeit IMMER im Client berechnen (keine Serverzeit mehr)
+  const displayTime = new Date().toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   meta.textContent = `${displayName} • ${displayTime}`;
 
@@ -52,7 +51,7 @@ function sendMessage() {
   // eigene Nachricht sofort anzeigen (mit eigenem Username)
   addMessage({ text, fromSelf: true, userName: username });
 
-  // an Server schicken
+  // an Server schicken (ohne Zeit, die ist egal)
   socket.emit("chat-message", { text });
 
   inputEl.value = "";
@@ -84,7 +83,6 @@ socket.on("chat-message", (data) => {
     text: data.text,
     fromSelf: false,
     userName: data.username,
-    time: data.time,
   });
 });
 
