@@ -189,7 +189,7 @@ body.fn-body {
 
 .fn-userlist-list {
   list-style: none;
-  padding: 12px;
+  padding: 8px;
   margin: 0;
   overflow-y: auto;
   display: flex;
@@ -227,32 +227,34 @@ body.fn-body {
 
 .fn-userlist-item {
   list-style: none;
-  padding: 12px 16px;
-  margin: 8px 0;
-  border-radius: 10px;
+  padding: 4px 8px;              /* kleiner */
+  margin: 1px 0;                 /* kaum Abstand */
+  border-radius: 6px;
 
-  background: rgba(255, 255, 255, 0.03); /* leichte Transparenz */
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;       /* KEIN Block standardmäßig */
+  border: none;
 
-  font-size: 1.05rem;
+  font-size: 0.85rem;            /* kleinere Schrift */
   color: #e8e4fc;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 
-  transition: 0.18s ease-in-out;
-  cursor: default;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  transition: background 0.15s ease, transform 0.12s ease;
+  cursor: pointer;
 }
 
-/* Hover-Effekt */
 .fn-userlist-item:hover {
-  background: rgba(137, 96, 255, 0.12);
-  border-color: rgba(137, 96, 255, 0.3);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);  /* Block nur beim Hover */
+  transform: translateX(3px);             /* leicht nach rechts schieben */
 }
 
-/* Optional: Wenn du Avatare oder Icons willst */
+/* kleiner Punkt links */
 .fn-userlist-item::before {
   content: "•";
   color: #9a6aff;
-  margin-right: 8px;
-  font-size: 1.3rem;
+  margin-right: 6px;
+  font-size: 0.9rem;                      /* kleiner als vorher */
 }
