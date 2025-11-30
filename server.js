@@ -43,23 +43,23 @@ io.on("connection", (socket) => {
 
   // Chat-Nachricht eines Clients
   socket.on("chat-message", (data) => {
-    const user = users.get(socket.id);
-    const text = (data && data.text ? data.text : "").toString().trim();
-    if (!text) return;
+  const user = users.get(socket.id);
+  const text = (data && data.text ? data.text : "").toString().trim();
+  if (!text) return;
 
-    const username = user?.username || "User";
-    const time = new Date().toLocaleTimeString("de-DE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    // Nachricht an alle Clients (inkl. Sender)
-    io.emit("chat-message", {
-      text,
-      username,
-      time,
-    });
+  const username = user?.username || "User";
+  const time = new Date().toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
+
+  // Nur an die anderen Clients senden (nicht an den Sender)
+  socket.broadcast.emit("chat-message", {
+    text,
+    username,
+    time,
+  });
+});
 
   // Disconnect
   socket.on("disconnect", () => {
