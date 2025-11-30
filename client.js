@@ -68,14 +68,20 @@ inputEl.addEventListener("keydown", (e) => {
 });
 
 // --------------------------------------------------
-// NEU: Username & Gender sicher vom Server holen
+// Username & Gender sicher vom Server holen
 // --------------------------------------------------
 
 fetch("/me")
-  .then(res => res.json())
-  .then(data => {
-    username = data.username || "Gast";
-    gender = data.gender || "";
+  .then((res) => res.json())
+  .then((data) => {
+    if (!data.loggedIn) {
+      // Sicherheitsfallback – sollte wegen /chat-Route nicht vorkommen
+      window.location.href = "/";
+      return;
+    }
+
+    username = data.username;
+    gender = data.gender;
 
     // Registrierung erst NACH Login-Daten
     socket.emit("register-user", {
@@ -100,6 +106,11 @@ socket.on("user-list", (users) => {
     const li = document.createElement("li");
     li.classList.add("fn-userlist-item");
     li.textContent = user.username;
+
+    if (user.away) {
+      li.classList.add("fn-user-away");
+    }
+
     userListEl.appendChild(li);
   });
 });

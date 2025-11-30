@@ -3,23 +3,23 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 
-// eigenes Modul für Systemnachrichten
 const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
 
-// NEU: Richtige Reihenfolge – require oben, use unten
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+
+// sessionId -> { username, gender, lastActive, away, timeoutHandle }
+const userStates = {};
+const AWAY_TIMEOUT = 1000 * 120; // 2 Minuten
+
+const sessions = {}; // sessionId -> { username, gender }
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// NEU: App existiert → jetzt cookieParser & urlencoded aktivieren
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
-// Sessionspeicher
-const sessions = {}; // sessionId -> { username, gender }
 
 // LOGIN ENDPOINT
 app.post("/login", (req, res) => {
@@ -32,6 +32,14 @@ app.post("/login", (req, res) => {
   const sessionId = crypto.randomUUID();
   sessions[sessionId] = { username, gender };
 
+  userStates[sessionId] = {
+    username,
+    gender,
+    lastActive: Date.now(),
+    away: false,
+    timeoutHandle: null
+  };
+
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
     sameSite: "strict",
@@ -41,52 +49,69 @@ app.post("/login", (req, res) => {
   res.redirect("/chat");
 });
 
-// 🚨 WICHTIG: Login-Seite – vor static
+// LOGIN-SEITE
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
 
-// 🚨 WICHTIG: LOGIN-SCHUTZ – vor static
+// LOGIN-SCHUTZ
 app.get("/chat", (req, res) => {
-  if (!req.cookies || !req.cookies.sessionId || !sessions[req.cookies.sessionId]) {
+  const sid = req.cookies.sessionId;
+  if (!sid || !sessions[sid]) {
     return res.redirect("/");
   }
 
   res.sendFile(path.join(__dirname, "chat.html"));
 });
 
-// 🚨 WICHTIG: chat.html blockieren – vor static
+// chat.html verhindern
 app.get("/chat.html", (req, res) => {
   res.redirect("/chat");
 });
 
-// User-Map: socket.id -> { username, gender }
+// /me Endpoint (für client.js)
+app.get("/me", (req, res) => {
+  const sid = req.cookies.sessionId;
+  if (!sid || !sessions[sid]) {
+    return res.json({ username: "Gast", gender: "none" });
+  }
+
+  res.json(sessions[sid]);
+});
+
+// User-Map: socket.id -> userObject
 const users = new Map();
 
 function getUserList() {
   return Array.from(users.values());
 }
 
+// SOCKET.IO
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
+  // USER REGISTER
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
     users.set(socket.id, {
       username: cleanName,
       gender: gender || "",
+      away: false
     });
 
     console.log("User registered:", socket.id, cleanName);
 
     io.emit("user-list", getUserList());
+
+    // ⚠️ später angepasst für ReLogin-Logik
     emitUserJoined(io, cleanName);
   });
 
+  // CHAT MESSAGE
   socket.on("chat-message", (data) => {
     const user = users.get(socket.id);
-    const text = (data && data.text ? data.text : "").toString().trim();
+    const text = (data?.text || "").toString().trim();
     if (!text) return;
 
     const username = user?.username || "User";
@@ -97,31 +122,34 @@ io.on("connection", (socket) => {
     });
   });
 
+  // DISCONNECT → AWAY SYSTEM
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
 
     if (user) {
-      emitUserLeft(io, user.username);
+      const sessionId = Object.keys(sessions).find(
+        sid => sessions[sid].username === user.username
+      );
 
-      users.delete(socket.id);
-      io.emit("user-list", getUserList());
+      if (sessionId && userStates[sessionId]) {
+        userStates[sessionId].away = true;
+        userStates[sessionId].lastActive = Date.now();
+
+        // leave verzögert senden
+        userStates[sessionId].timeoutHandle = setTimeout(() => {
+          if (userStates[sessionId].away) {
+            emitUserLeft(io, user.username);
+          }
+        }, AWAY_TIMEOUT);
+      }
     }
 
-    console.log("Client disconnected:", socket.id);
+    users.delete(socket.id);
+    io.emit("user-list", getUserList());
   });
 });
 
-// /me Endpoint
-app.get("/me", (req, res) => {
-  const { sessionId } = req.cookies;
-  if (!sessionId || !sessions[sessionId]) {
-    return res.json({ username: "Gast", gender: "none" });
-  }
-
-  res.json(sessions[sessionId]);
-});
-
-// 🚨 GANZ ZUM SCHLUSS: static-Serving
+// STATIC
 app.use(express.static(__dirname));
 
 const PORT = process.env.PORT || 3000;

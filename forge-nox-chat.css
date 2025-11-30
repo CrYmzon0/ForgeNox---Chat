@@ -258,3 +258,17 @@ body.fn-body {
   margin-right: 6px;
   font-size: 0.9rem;                      /* kleiner als vorher */
 }
+
+.fn-user-away {
+  opacity: 0.4;
+  color: var(--fn-text-muted);
+}
+.fn-user-away::before {
+  color: gray;
+}
+
+.fn-user-away {
+  opacity: 0.4;
+  filter: grayscale(70%);
+  font-style: italic;
+}
