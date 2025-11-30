@@ -79,8 +79,7 @@ body.fn-body {
 /* Nachrichten */
 .fn-msg {
   max-width: 70%;
-  display: flex;
-  flex-direction: column;
+  display: block;        /* war: flex */
 }
 
 .fn-msg-meta {
@@ -117,13 +116,13 @@ body.fn-body {
   color: #0b0614;
 }
 
-/* Blase selbst – kompakter */
+/* Blase selbst */
 .fn-msg-bubble {
-  padding: 4px 10px;      /* weniger Luft rundherum */
+  padding: 10px 14px;
   border-radius: 14px;
   font-size: 0.9rem;
-  line-height: 1.2;       /* engerer Zeilenabstand */
-  text-align: left;       /* Sicherheit: Text klar linksbündig */
+  line-height: 1.4;
+  display: inline-block;
 }
 
 /* INPUT-BEREICH */
