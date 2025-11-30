@@ -21,7 +21,9 @@ function addMessage({ text, fromSelf = false, userName = "", time = "" }) {
   const meta = document.createElement("div");
   meta.classList.add("fn-msg-meta");
 
-  const displayName = fromSelf ? "Du" : userName || "User";
+  // WICHTIG: Immer Username anzeigen, kein "Du" mehr
+  const displayName = userName || "User";
+
   const displayTime =
     time ||
     new Date().toLocaleTimeString("de-DE", {
@@ -47,7 +49,7 @@ function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
 
-  // eigene Nachricht sofort anzeigen
+  // eigene Nachricht sofort anzeigen (mit eigenem Username)
   addMessage({ text, fromSelf: true, userName: username });
 
   // an Server schicken
