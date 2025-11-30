@@ -41,10 +41,10 @@ app.post("/login", (req, res) => {
   };
 
   res.cookie("sessionId", sessionId, {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: true
-  });
+  httpOnly: true,
+  sameSite: "strict",
+  secure: false   // oder ganz weglassen
+});
 
   res.redirect("/chat");
 });
