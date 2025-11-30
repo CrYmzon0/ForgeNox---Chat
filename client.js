@@ -73,7 +73,7 @@ fetch("/me")
   .then((res) => res.json())
   .then((data) => {
     if (!data.loggedIn) {
-      // Sicherheitsfallback – sollte wegen /chat-Route nicht vorkommen
+      // Fallback – sollte wegen /chat-Route eigentlich nicht auftreten
       window.location.href = "/";
       return;
     }

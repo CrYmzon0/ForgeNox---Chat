@@ -21,7 +21,8 @@
     fetch("/me")
       .then(r => r.json())
       .then(data => {
-        if (!data.loggedIn) {
+        // Nur wenn eingeloggt UND away → ReLogin erlaubt
+        if (!data.loggedIn || !data.away) {
           window.location.href = "/";
           return;
         }
@@ -34,9 +35,13 @@
         };
 
         document.getElementById("fn-relogin-logout").onclick = () => {
-          document.cookie = "sessionId=; Max-Age=0;";
+          // Cookie invalidieren – Session ist serverseitig nach Timeout eh weg
+          document.cookie = "sessionId=; Max-Age=0; path=/;";
           window.location.href = "/";
         };
+      })
+      .catch(() => {
+        window.location.href = "/";
       });
   </script>
 </body>
