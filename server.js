@@ -41,12 +41,23 @@ app.post("/login", (req, res) => {
   res.redirect("/chat");
 });
 
-// Statische Dateien ausliefern
-app.use(express.static(__dirname));
-
-// Standardroute -> Login
+// 🚨 WICHTIG: Login-Seite – vor static
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
+});
+
+// 🚨 WICHTIG: LOGIN-SCHUTZ – vor static
+app.get("/chat", (req, res) => {
+  if (!req.cookies || !req.cookies.sessionId || !sessions[req.cookies.sessionId]) {
+    return res.redirect("/");
+  }
+
+  res.sendFile(path.join(__dirname, "chat.html"));
+});
+
+// 🚨 WICHTIG: chat.html blockieren – vor static
+app.get("/chat.html", (req, res) => {
+  res.redirect("/chat");
 });
 
 // User-Map: socket.id -> { username, gender }
@@ -59,7 +70,6 @@ function getUserList() {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Client meldet seinen Usernamen an
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
@@ -70,14 +80,10 @@ io.on("connection", (socket) => {
 
     console.log("User registered:", socket.id, cleanName);
 
-    // Userliste an alle
     io.emit("user-list", getUserList());
-
-    // Systemmeldung: User hat den Chat betreten
     emitUserJoined(io, cleanName);
   });
 
-  // Chat-Nachricht eines Clients
   socket.on("chat-message", (data) => {
     const user = users.get(socket.id);
     const text = (data && data.text ? data.text : "").toString().trim();
@@ -85,19 +91,16 @@ io.on("connection", (socket) => {
 
     const username = user?.username || "User";
 
-    // Nachricht an alle anderen Clients (nicht an den Sender)
     socket.broadcast.emit("chat-message", {
       text,
       username,
     });
   });
 
-  // Disconnect
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
 
     if (user) {
-      // Systemmeldung: User hat den Chat verlassen
       emitUserLeft(io, user.username);
 
       users.delete(socket.id);
@@ -108,25 +111,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// CHAT ROUTING – Login-Schutz
-app.get("/chat", (req, res) => {
-  if (!req.cookies || !req.cookies.sessionId || !sessions[req.cookies.sessionId]) {
-    return res.redirect("/");
-  }
-
-  res.sendFile(path.join(__dirname, "chat.html"));
-});
-
-// Direktzugriff auf chat.html immer umleiten
-app.get("/chat.html", (req, res) => {
-  res.redirect("/chat");
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server läuft auf Port ${PORT}`);
-  
-});
+// /me Endpoint
 app.get("/me", (req, res) => {
   const { sessionId } = req.cookies;
   if (!sessionId || !sessions[sessionId]) {
@@ -134,4 +119,12 @@ app.get("/me", (req, res) => {
   }
 
   res.json(sessions[sessionId]);
+});
+
+// 🚨 GANZ ZUM SCHLUSS: static-Serving
+app.use(express.static(__dirname));
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server läuft auf Port ${PORT}`);
 });
