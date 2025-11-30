@@ -1,5 +1,6 @@
-// Verbindung zum Socket.IO-Server
-const socket = io();
+// eine globale Socket-Verbindung für alle Scripts
+window.socket = window.socket || io();
+const socket = window.socket;
 
 // DOM-Elemente
 const messagesEl = document.getElementById("messages");

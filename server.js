@@ -34,6 +34,7 @@ io.on("connection", (socket) => {
       username: cleanName,
       gender: gender || "",
     });
+    emitUserJoined(io, cleanName);
 
     console.log("User registered:", socket.id, cleanName);
 
@@ -65,6 +66,9 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
     users.delete(socket.id);
+    if (user) {
+  emitUserLeft(io, user.username);
+}
 
     // Userliste nach Entfernen aktualisieren
     io.emit("user-list", getUserList());
@@ -75,3 +79,5 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
 });
+
+const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
