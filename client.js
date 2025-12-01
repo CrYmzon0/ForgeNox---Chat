@@ -9,7 +9,10 @@ const messagesEl   = document.getElementById("messages");
 const inputEl      = document.getElementById("chatInput");
 const sendBtn      = document.getElementById("sendBtn");
 const userListEl   = document.getElementById("userList");
-const userSearchEl = document.getElementById("userSearch");
+
+// WICHTIG: Suchfeld explizit aus der Userlist-Box holen,
+// damit NICHT das Chat-Eingabefeld unten betroffen ist.
+const userSearchEl = document.querySelector(".fn-userlist-search input");
 
 // Username & Gender (kommen vom Server über /me)
 let username = "";
@@ -22,7 +25,7 @@ let allUsers = [];
 // Nachricht im Chat anzeigen
 // --------------------------------------------------
 function addMessage({ text, fromSelf = false, userName = "" }) {
-  if (!messagesEl) return; // falls Script irgendwo ohne Chat läuft
+  if (!messagesEl) return; // falls Script bspw. auf login.html läuft
 
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
@@ -153,7 +156,7 @@ function renderUserList(filterText = "") {
 }
 
 // --------------------------------------------------
-// Userliste vom Server + Online-Anzahl im Placeholder
+// Userliste vom Server + Online-Anzahl im User-Suchfeld
 // --------------------------------------------------
 socket.on("user-list", (users) => {
   allUsers = users || [];
@@ -168,7 +171,7 @@ socket.on("user-list", (users) => {
 });
 
 // --------------------------------------------------
-// Live-Suche
+// Live-Suche in der Userliste
 // --------------------------------------------------
 if (userSearchEl) {
   userSearchEl.addEventListener("input", () => {
