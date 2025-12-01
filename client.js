@@ -14,10 +14,20 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("sendBtn") ||
     document.querySelector(".fn-chat-input button");
   const userListEl = document.getElementById("userList");
+  const userSearchEl = document.getElementById("userSearch");
+  // --------------------------------------------------
+// Userliste aktualisieren (Server -> allUsers) + rendern
+// --------------------------------------------------
+socket.on("user-list", (users) => {
+  allUsers = Array.isArray(users) ? users : [];
+  renderUserList();
+});
 
   // Username & Gender (kommen vom Server über /me)
   let username = "";
   let gender = "";
+  // Merkt sich immer die aktuelle komplette Userliste
+  let allUsers = [];
 
   // --------------------------------------------------
   // Nachricht im Chat anzeigen
@@ -108,6 +118,61 @@ window.addEventListener("DOMContentLoaded", () => {
         gender,
       });
     });
+
+  // --------------------------------------------------
+  // Userliste rendern (inkl. Suchfilter)
+  // --------------------------------------------------
+  function renderUserList() {
+    if (!userListEl) return;
+
+    const term =
+      (userSearchEl && userSearchEl.value ? userSearchEl.value : "")
+        .trim()
+        .toLowerCase();
+
+    const usersToRender = [];
+    const source = Array.isArray(allUsers) ? allUsers : [];
+
+    if (!term) {
+      // Keine Suche: Reihenfolge wie vom Server
+      source.forEach((u) => usersToRender.push(u));
+    } else {
+      const matches = [];
+      const rest = [];
+
+      source.forEach((u) => {
+        const name = (u.username || "").toLowerCase();
+        if (name.includes(term)) {
+          matches.push(u);
+        } else {
+          rest.push(u);
+        }
+      });
+
+      // erst passende User, dann der Rest, jeweils in Originalreihenfolge
+      usersToRender.push(...matches, ...rest);
+    }
+
+    userListEl.innerHTML = "";
+    usersToRender.forEach((user) => {
+      const li = document.createElement("li");
+      li.classList.add("fn-userlist-item");
+      li.textContent = user.username;
+
+      if (user.away) {
+        li.classList.add("fn-user-away");
+      }
+
+      userListEl.appendChild(li);
+    });
+  }
+
+  // Suche neu rendern, sobald der User tippt
+  if (userSearchEl) {
+    userSearchEl.addEventListener("input", () => {
+      renderUserList();
+    });
+  }
 
   // --------------------------------------------------
   // Nachrichten von anderen empfangen
