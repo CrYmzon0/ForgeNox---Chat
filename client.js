@@ -10,32 +10,15 @@ const inputEl    = document.getElementById("chatInput");
 const sendBtn    = document.getElementById("sendBtn");
 const userListEl = document.getElementById("userList");
 
-// WICHTIG: Nur das Suchfeld in der rechten Userliste auswählen
-// (Input innerhalb des Containers .fn-userlist-search)
-const userSearchEl = document.querySelector(".fn-userlist-search input");
-
 // Username & Gender (kommen vom Server über /me)
 let username = "";
-let gender = "";
-
-// Lokale Kopie der aktuellen Userliste
-let allUsers = [];
-
-// --------------------------------------------------
-// Defaults setzen
-// --------------------------------------------------
-
-// Chat-Eingabefeld unten soll immer diesen Placeholder haben,
-// unabhängig davon, was vorher im HTML stand.
-if (inputEl) {
-  inputEl.placeholder = "Nachricht eingeben...";
-}
+let gender   = "";
 
 // --------------------------------------------------
 // Nachricht im Chat anzeigen
 // --------------------------------------------------
 function addMessage({ text, fromSelf = false, userName = "" }) {
-  if (!messagesEl) return; // falls Script z.B. auf login.html läuft
+  if (!messagesEl) return;
 
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
@@ -73,8 +56,10 @@ function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  // eigene Nachricht sofort anzeigen
   addMessage({ text, fromSelf: true, userName: username });
 
+  // an Server schicken
   socket.emit("chat-message", { text });
 
   inputEl.value = "";
@@ -109,9 +94,10 @@ fetch("/me")
       return;
     }
 
-    username = data.username;
-    gender = data.gender;
+    username = data.username || "Gast";
+    gender   = data.gender || "";
 
+    // Registrierung erst NACH Login-Daten
     socket.emit("register-user", {
       username,
       gender,
@@ -130,19 +116,13 @@ socket.on("chat-message", (data) => {
 });
 
 // --------------------------------------------------
-// Userliste rendern + Suchlogik
+// Userliste aktualisieren (ohne Suche / ohne Online-Counter)
 // --------------------------------------------------
-function renderUserList(filterText = "") {
+socket.on("user-list", (users) => {
   if (!userListEl) return;
 
-  const q = filterText.trim().toLowerCase();
-
-  const list = q
-    ? allUsers.filter((u) => u.username.toLowerCase().includes(q))
-    : [...allUsers];
-
   userListEl.innerHTML = "";
-  list.forEach((user) => {
+  (users || []).forEach((user) => {
     const li = document.createElement("li");
     li.classList.add("fn-userlist-item");
     li.textContent = user.username;
@@ -153,29 +133,4 @@ function renderUserList(filterText = "") {
 
     userListEl.appendChild(li);
   });
-}
-
-// --------------------------------------------------
-// Userliste vom Server + Online-Anzahl im User-Suchfeld
-// --------------------------------------------------
-socket.on("user-list", (users) => {
-  allUsers = users || [];
-
-  // Nur das rechte Suchfeld wird geändert
-  if (userSearchEl) {
-    const onlineCount = allUsers.filter((u) => !u.away).length;
-    userSearchEl.placeholder = `User suchen (${onlineCount} online)`;
-  }
-
-  const currentFilter = userSearchEl ? userSearchEl.value : "";
-  renderUserList(currentFilter);
 });
-
-// --------------------------------------------------
-// Live-Suche in der Userliste
-// --------------------------------------------------
-if (userSearchEl) {
-  userSearchEl.addEventListener("input", () => {
-    renderUserList(userSearchEl.value);
-  });
-}
