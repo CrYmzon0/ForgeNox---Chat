@@ -1,110 +1,99 @@
 /* forge-nox-rooms.css */
-/* Rechte Spalte mit Räumen & Usern */
+/* Räume in der rechten Sidebar – Userliste bleibt separat */
 
-/* Falls du irgendwann eine eigene Sidebar nutzt – aktuell bei dir nicht im Einsatz */
-.fn-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  height: 100%;
-}
-
-/* Raumliste-Container (bei dir: <ul id="roomList" class="fn-roomlist">) */
+/* Liste der Räume (ul#roomList) */
 .fn-roomlist {
   background: radial-gradient(circle at top left, #2b1647 0, #10081b 55%, #07030b 100%);
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
   list-style: none;
-  margin: 10px 0;
+  margin: 10px 0 12px;
 }
 
-/* (Reserve, falls du später eine separate Liste brauchst) */
-.fn-roomlist-title {
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #bba8ff;
-  margin: 0 0 6px 2px;
-}
-
-.fn-roomlist-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* Einzelner Raum-Eintrag (Karte) */
+/* Einzelner Raum (li.fn-room) */
 .fn-room {
   display: flex;
-  flex-direction: column; /* Header oben, Userliste darunter */
-  gap: 4px;
-  padding: 6px 10px 8px;
+  align-items: stretch;
+  padding: 6px 10px;
   margin-bottom: 6px;
-  border-radius: 16px;
+  border-radius: 14px;
   font-size: 0.85rem;
   cursor: pointer;
   transition:
     background 0.15s ease,
     transform 0.05s ease,
     box-shadow 0.15s ease;
+  list-style: none;
 }
 
-/* Kopfzeile in der Raumkarte: Name links, Usercount rechts */
+/* Kopfzeile innerhalb des Raums: Name links, Count rechts */
 .fn-room-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   gap: 6px;
 }
 
-.fn-room span.fn-room-name {
-  flex: 1;
+.fn-room-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.fn-room span.fn-room-count {
+.fn-room-count {
   font-size: 0.75rem;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-/* Farbcodes je Typ */
+/* Farbvarianten je Raumtyp */
 .fn-room--public {
-  background: rgba(172, 132, 255, 0.16);
+  background: linear-gradient(90deg, rgba(172, 132, 255, 0.35), rgba(120, 89, 255, 0.18));
 }
 
-.fn-room--private,
+.fn-room--private {
+  background: linear-gradient(90deg, rgba(255, 195, 113, 0.35), rgba(230, 140, 70, 0.15));
+}
+
 .fn-room--locked {
-  background: rgba(255, 187, 120, 0.12);
+  background: linear-gradient(90deg, rgba(255, 140, 120, 0.35), rgba(180, 60, 60, 0.18));
 }
 
 /* Aktiver Raum */
 .fn-room--active {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
 /* Hover-Effekt */
 .fn-room:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.10);
 }
 
-/* Emojis für Typen */
-.fn-room--private::before {
+/* Emojis vor dem Raumnamen je Typ */
+.fn-room--private .fn-room-name::before {
   content: "🔑";
   margin-right: 6px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-.fn-room--locked::before {
+.fn-room--locked .fn-room-name::before {
   content: "🔒";
   margin-right: 6px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-/* Userliste-Container (rechte Box insgesamt, nicht pro Raum) */
+/* Public-Raum bekommt kein Emoji; falls du willst: */
+/*
+.fn-room--public .fn-room-name::before {
+  content: "🌐";
+  margin-right: 6px;
+  font-size: 0.85rem;
+}
+*/
+
+/* Userliste unten in der Box – NICHT in den Räumen */
 .fn-userlist {
   background: rgba(7, 3, 13, 0.9);
   border-radius: 18px;
@@ -112,15 +101,5 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-/* Userliste, wenn sie INSIDE einer Raumkarte hängt */
-.fn-room .fn-userlist-list {
-  margin-top: 6px;
-  padding-left: 14px; /* leicht eingerückt unter dem Raum */
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  list-style: none;
-}
-
-/* Optional: etwas engerer Zeilenabstand innerhalb der Karte */
-.fn-room .fn-userlist-list li {
-  margin: 2px 0;
-}
+/* Wichtig: keine Spezial-Regeln mehr für .fn-room .fn-userlist-list,
+   damit die Userliste frei und wie vorher gerendert wird. */

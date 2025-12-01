@@ -1,12 +1,11 @@
 // rooms-client.js
-// Steuert die Anzeige der Räume rechts + Verankerung der Userliste im aktiven Raum
+// Steuert die Anzeige der Räume rechts (ohne Userliste hineinzuziehen)
 
 (function () {
   const socket = window.socket || io();
 
   window.addEventListener("DOMContentLoaded", () => {
     const roomListEl = document.getElementById("roomList");
-    const userListEl = document.getElementById("userList");
     const roomTitleEl = document.querySelector("[data-room-title]");
 
     if (!roomListEl) return;
@@ -15,21 +14,7 @@
     let currentRoomId = "lobby";
 
     // --------------------------------------------------
-    // Userliste in die aktive Raumkarte hängen
-    // --------------------------------------------------
-    function attachUserListToActiveRoom() {
-      if (!userListEl || !currentRoomId) return;
-
-      const activeLi = roomListEl.querySelector(
-        `.fn-room[data-room-id="${currentRoomId}"]`
-      );
-      if (!activeLi) return;
-
-      activeLi.appendChild(userListEl);
-    }
-
-    // --------------------------------------------------
-    // Räume rendern
+    // Räume rendern (nur Karten, keine Userliste)
     // --------------------------------------------------
     function renderRooms() {
       roomListEl.innerHTML = "";
@@ -40,6 +25,8 @@
         li.dataset.roomId = room.id;
         li.dataset.roomType = room.type;
 
+        // Typ-spezifische Klasse
+        li.classList.add(`fn-room--${room.type}`);
         if (room.id === currentRoomId) {
           li.classList.add("fn-room--active");
         }
@@ -62,22 +49,17 @@
 
         roomListEl.appendChild(li);
       });
-
-      // Userliste physisch in den aktiven Raum verschieben
-      attachUserListToActiveRoom();
     }
 
     // --------------------------------------------------
     // Socket-Events
     // --------------------------------------------------
 
-    // Raumliste vom Server
     socket.on("room-list", (serverRooms) => {
       rooms = Array.isArray(serverRooms) ? serverRooms : [];
       renderRooms();
     });
 
-    // Aktueller Raum wurde geändert
     socket.on("room-changed", ({ roomId }) => {
       currentRoomId = roomId;
       renderRooms();
@@ -90,7 +72,6 @@
       }
     });
 
-    // Fehler beim Joinen
     socket.on("join-room-error", (data) => {
       if (!data || !data.message) return;
       alert(data.message);
@@ -108,7 +89,6 @@
       if (!roomId || !roomType) return;
 
       if (roomType === "locked") {
-        // verschlossener Raum – Server darf „nix da“ sagen
         socket.emit("join-room", { roomId });
         return;
       }
