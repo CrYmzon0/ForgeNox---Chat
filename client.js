@@ -8,6 +8,13 @@ const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const userListEl = document.getElementById("userList");
+const userSearchEl = document.getElementById("userSearch");
+
+if (userSearchEl) {
+  userSearchEl.addEventListener("input", () => {
+    renderUserList(userSearchEl.value);
+  });
+}
 
 // Username und Gender werden NICHT mehr aus der URL gelesen
 let username = "";
@@ -97,10 +104,43 @@ socket.on("chat-message", (data) => {
   });
 });
 
-// Userliste aktualisieren
+// Userliste aktualisieren + Suchfeld + Online-Anzeige
+let allUsers = []; // NEU oben definieren falls nicht vorhanden
+
 socket.on("user-list", (users) => {
+  allUsers = users || [];
+
+  // Online-Anzahl berechnen (away = false)
+  const onlineCount = allUsers.filter(u => !u.away).length;
+
+  // Placeholder updaten
+  const userSearchEl = document.getElementById("userSearch");
+  if (userSearchEl) {
+    userSearchEl.placeholder = `User suchen (${onlineCount} online)`;
+  }
+
+  // Liste rendern (mit Suchfilter)
+  const filter = userSearchEl ? userSearchEl.value : "";
+  renderUserList(filter);
+});
+
+function renderUserList(filterText = "") {
+  const q = filterText.trim().toLowerCase();
+  let list = [...allUsers];
+
+  if (q) {
+    list.sort((a, b) => {
+      const aMatch = a.username.toLowerCase().includes(q);
+      const bMatch = b.username.toLowerCase().includes(q);
+
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return a.username.localeCompare(b.username);
+    });
+  }
+
   userListEl.innerHTML = "";
-  users.forEach((user) => {
+  list.forEach((user) => {
     const li = document.createElement("li");
     li.classList.add("fn-userlist-item");
     li.textContent = user.username;
@@ -111,4 +151,4 @@ socket.on("user-list", (users) => {
 
     userListEl.appendChild(li);
   });
-});
+}
