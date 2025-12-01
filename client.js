@@ -1,13 +1,15 @@
 // client.js
+
 // eine globale Socket-Verbindung für alle Scripts
 window.socket = window.socket || io();
 const socket = window.socket;
 
 // DOM-Elemente
-const messagesEl = document.getElementById("messages");
-const inputEl = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const userListEl = document.getElementById("userList");
+const messagesEl   = document.getElementById("messages");
+const inputEl      = document.getElementById("chatInput");
+const sendBtn      = document.getElementById("sendBtn");
+const userListEl   = document.getElementById("userList");
+const userSearchEl = document.getElementById("userSearch");
 
 // Username & Gender (kommen vom Server über /me)
 let username = "";
@@ -20,6 +22,8 @@ let allUsers = [];
 // Nachricht im Chat anzeigen
 // --------------------------------------------------
 function addMessage({ text, fromSelf = false, userName = "" }) {
+  if (!messagesEl) return; // falls Script irgendwo ohne Chat läuft
+
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
   wrapper.classList.add(fromSelf ? "fn-msg-me" : "fn-msg-other");
@@ -51,6 +55,8 @@ function addMessage({ text, fromSelf = false, userName = "" }) {
 // Nachricht an Server senden
 // --------------------------------------------------
 function sendMessage() {
+  if (!inputEl) return;
+
   const text = inputEl.value.trim();
   if (!text) return;
 
@@ -62,18 +68,22 @@ function sendMessage() {
 }
 
 // Klick auf "Senden"
-sendBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  sendMessage();
-});
-
-// Enter zum Senden
-inputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+if (sendBtn) {
+  sendBtn.addEventListener("click", (e) => {
     e.preventDefault();
     sendMessage();
-  }
-});
+  });
+}
+
+// Enter zum Senden
+if (inputEl) {
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
 
 // --------------------------------------------------
 // Username & Gender sicher vom Server holen
@@ -148,20 +158,18 @@ function renderUserList(filterText = "") {
 socket.on("user-list", (users) => {
   allUsers = users || [];
 
-  const searchInput = document.getElementById("userSearch");
-  if (searchInput) {
+  if (userSearchEl) {
     const onlineCount = allUsers.filter((u) => !u.away).length;
-    searchInput.placeholder = `User suchen (${onlineCount} online)`;
+    userSearchEl.placeholder = `User suchen (${onlineCount} online)`;
   }
 
-  const currentFilter = searchInput ? searchInput.value : "";
+  const currentFilter = userSearchEl ? userSearchEl.value : "";
   renderUserList(currentFilter);
 });
 
 // --------------------------------------------------
 // Live-Suche
 // --------------------------------------------------
-const userSearchEl = document.getElementById("userSearch");
 if (userSearchEl) {
   userSearchEl.addEventListener("input", () => {
     renderUserList(userSearchEl.value);
