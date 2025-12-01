@@ -9,10 +9,7 @@ const messagesEl   = document.getElementById("messages");
 const inputEl      = document.getElementById("chatInput");
 const sendBtn      = document.getElementById("sendBtn");
 const userListEl   = document.getElementById("userList");
-
-// WICHTIG: Suchfeld explizit aus der Userlist-Box holen,
-// damit NICHT das Chat-Eingabefeld unten betroffen ist.
-const userSearchEl = document.querySelector(".fn-userlist-search input");
+const userSearchEl = document.getElementById("userSearch");
 
 // Username & Gender (kommen vom Server über /me)
 let username = "";
@@ -25,7 +22,7 @@ let allUsers = [];
 // Nachricht im Chat anzeigen
 // --------------------------------------------------
 function addMessage({ text, fromSelf = false, userName = "" }) {
-  if (!messagesEl) return; // falls Script bspw. auf login.html läuft
+  if (!messagesEl) return; // falls Script z.B. auf login.html läuft
 
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
@@ -95,7 +92,6 @@ fetch("/me")
   .then((res) => res.json())
   .then((data) => {
     if (!data.loggedIn) {
-      // Fallback – sollte wegen /chat-Route eigentlich nicht auftreten
       window.location.href = "/";
       return;
     }
@@ -103,7 +99,6 @@ fetch("/me")
     username = data.username;
     gender = data.gender;
 
-    // Registrierung erst NACH Login-Daten
     socket.emit("register-user", {
       username,
       gender,
@@ -128,18 +123,13 @@ function renderUserList(filterText = "") {
   if (!userListEl) return;
 
   const q = filterText.trim().toLowerCase();
-  let list = [...allUsers];
 
-  if (q) {
-    list.sort((a, b) => {
-      const aMatch = a.username.toLowerCase().includes(q);
-      const bMatch = b.username.toLowerCase().includes(q);
-
-      if (aMatch && !bMatch) return -1;
-      if (!aMatch && bMatch) return 1;
-      return a.username.localeCompare(b.username);
-    });
-  }
+  // echte Filterung: nur passende User anzeigen
+  const list = q
+    ? allUsers.filter((u) =>
+        u.username.toLowerCase().includes(q)
+      )
+    : [...allUsers];
 
   userListEl.innerHTML = "";
   list.forEach((user) => {
@@ -156,7 +146,7 @@ function renderUserList(filterText = "") {
 }
 
 // --------------------------------------------------
-// Userliste vom Server + Online-Anzahl im User-Suchfeld
+// Userliste vom Server + Online-Anzahl im Suchfeld
 // --------------------------------------------------
 socket.on("user-list", (users) => {
   allUsers = users || [];
