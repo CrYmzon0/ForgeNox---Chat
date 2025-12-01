@@ -105,9 +105,7 @@ app.get("/chat", (req, res) => {
     return res.sendFile(path.join(__dirname, "relogin.html"));
   }
 
-  // WICHTIG:
-  // Hier NICHT mehr Join/away/timer anfassen – das macht der Socket-Teil
-  // (damit wir bei ReLogin die Join-Message sauber unterdrücken können)
+  // Hier KEIN Join/away/timer anfassen – macht Socket-Teil
 
   // falls Cookie noch fehlt, jetzt setzen
   if (!req.cookies.sessionId) {
@@ -167,6 +165,8 @@ app.get("/logout", (req, res) => {
   }
 
   res.clearCookie("sessionId");
+  // NEU: Userliste nachziehen
+  io.emit("user-list", getUserList());
   return res.redirect("/");
 });
 
@@ -197,20 +197,16 @@ app.get("/me", (req, res) => {
 // --------------------------------------------------
 const users = new Map();
 
+// WICHTIG: Liste basiert jetzt auf userStates, nicht auf sockets
 function getUserList() {
-  return Array.from(users.values()).map((u) => {
-    const sid = findSessionIdByUsername(u.username);
-    let away = false;
-
-    if (sid && userStates[sid]) {
-      const st = userStates[sid];
-      const diff = Date.now() - st.lastActive;
-      away = st.away && diff < AWAY_TIMEOUT;
-    }
+  return Object.keys(userStates).map((sid) => {
+    const st = userStates[sid];
+    const diff = Date.now() - st.lastActive;
+    const away = st.away && diff < AWAY_TIMEOUT;
 
     return {
-      username: u.username,
-      gender: u.gender,
+      username: st.username,
+      gender: st.gender,
       away,
     };
   });
@@ -295,12 +291,16 @@ io.on("connection", (socket) => {
 
             delete userStates[sessionId];
             delete sessions[sessionId];
+
+            // NEU: Liste nach endgültigem Leave aktualisieren
+            io.emit("user-list", getUserList());
           }
         }, AWAY_TIMEOUT);
       }
     }
 
     users.delete(socket.id);
+    // NEU: sofort nach Disconnect → User bleibt als away in der Liste
     io.emit("user-list", getUserList());
     console.log("Client disconnected:", socket.id);
   });
