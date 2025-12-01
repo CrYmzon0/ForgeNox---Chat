@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="forge-nox-chat.css" />
   <link rel="stylesheet" href="system-messages.css" />
+  <link rel="stylesheet" href="forge-nox-rooms.css" />12
 </head>
 <body class="fn-body">
 
@@ -15,7 +16,9 @@
     <section class="fn-chat-window">
       <header class="fn-chat-header fn-chat-header-center">
         <h2 class="fn-logo-chat">ForgeNox</h2>
-        <div class="fn-room-name">Raum: Hauptlobby</div>
+        <div class="fn-chat-header-room">
+  Raum: <span data-room-title>Hauptlobby</span>
+</div>
       </header>
 
       <div class="fn-chat-messages" id="messages">
@@ -46,5 +49,6 @@
   <!-- Dein Client-Code -->
   <script src="/client.js"></script>
   <script src="system-messages.js"></script>
+  <script src="rooms-client.js"></script>
 </body>
 </html>

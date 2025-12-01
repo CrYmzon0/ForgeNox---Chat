@@ -3,11 +3,11 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-
-const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
-
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+
+const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
+const { ROOMS, findRoom, getRoomsForClient } = require("./rooms-server");
 
 // 2-Minuten-Timeout
 const AWAY_TIMEOUT = 1000 * 120;
@@ -15,8 +15,11 @@ const AWAY_TIMEOUT = 1000 * 120;
 // sessionId -> { username, gender }
 const sessions = {};
 
-// sessionId -> { username, gender, lastActive, away, timeoutHandle }
+// sessionId -> { username, gender, lastActive, away, timeoutHandle, currentRoom }
 const userStates = {};
+
+// socket.id -> { username, gender, away, currentRoom }
+const users = new Map();
 
 const app = express();
 const server = http.createServer(app);
@@ -29,9 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 // Helper
 // --------------------------------------------------
 function findSessionIdByUsername(username) {
-  return Object.keys(sessions).find(
-    (sid) => sessions[sid].username === username
-  );
+  return Object.keys(sessions).find((sid) => sessions[sid].username === username);
 }
 
 // --------------------------------------------------
@@ -53,15 +54,16 @@ app.post("/login", (req, res) => {
     lastActive: Date.now(),
     away: false,
     timeoutHandle: null,
+    currentRoom: "lobby",
   };
 
+  // Cookie setzen
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
     sameSite: "strict",
-    secure: false, // im Prod-Betrieb auf true setzen, wenn HTTPS
+    secure: false,
   });
 
-  // Fallback sid in URL
   res.redirect(`/chat?sid=${sessionId}`);
 });
 
@@ -99,15 +101,11 @@ app.get("/chat", (req, res) => {
   const diff = Date.now() - state.lastActive;
   const fromRelogin = req.query.relogin === "1";
 
-  // User ist noch in der 2-Minuten-Away-Phase
   if (state.away && diff < AWAY_TIMEOUT && !fromRelogin) {
-    // Noch nicht „Weiter im Chat“ gedrückt → ReLogin anzeigen
     return res.sendFile(path.join(__dirname, "relogin.html"));
   }
 
-  // Hier KEIN Join/away/timer anfassen – macht Socket-Teil
-
-  // falls Cookie noch fehlt, jetzt setzen
+  // Cookie setzen falls nötig
   if (!req.cookies.sessionId) {
     res.cookie("sessionId", sid, {
       httpOnly: true,
@@ -125,15 +123,13 @@ app.get("/chat.html", (req, res) => {
 });
 
 // --------------------------------------------------
-// ReLogin-Seite (optional direkter Zugriff)
+// ReLogin-Seite
 // --------------------------------------------------
 app.get("/relogin", (req, res) => {
   const sid = req.cookies.sessionId;
-
   if (!sid || !sessions[sid] || !userStates[sid]) {
     return res.redirect("/");
   }
-
   const state = userStates[sid];
   const diff = Date.now() - state.lastActive;
 
@@ -145,7 +141,7 @@ app.get("/relogin", (req, res) => {
 });
 
 // --------------------------------------------------
-// Logout – Cookie + Session + Timer löschen
+// Logout
 // --------------------------------------------------
 app.get("/logout", (req, res) => {
   const sid = req.cookies.sessionId;
@@ -153,25 +149,21 @@ app.get("/logout", (req, res) => {
   if (sid && userStates[sid]) {
     const { username, timeoutHandle } = userStates[sid];
 
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
-    }
+    if (timeoutHandle) clearTimeout(timeoutHandle);
 
-    // expliziter Logout → sofortige Leave-Message
     emitUserLeft(io, username);
-
     delete userStates[sid];
     delete sessions[sid];
   }
 
   res.clearCookie("sessionId");
-  // NEU: Userliste nachziehen
-  io.emit("user-list", getUserList());
+
+  io.emit("user-list", []);
   return res.redirect("/");
 });
 
 // --------------------------------------------------
-// /me – liefert Login- und Away-Status
+// /me
 // --------------------------------------------------
 app.get("/me", (req, res) => {
   const sid = req.cookies.sessionId || req.query.sid;
@@ -193,22 +185,36 @@ app.get("/me", (req, res) => {
 });
 
 // --------------------------------------------------
-// User-Map: socket.id -> { username, gender }
+// Userliste basierend auf Raum
 // --------------------------------------------------
-const users = new Map();
+function getUserList(roomId) {
+  const list = [];
+  users.forEach((user) => {
+    if (!roomId || user.currentRoom === roomId) {
+      list.push({
+        username: user.username,
+        gender: user.gender,
+        away: user.away,
+      });
+    }
+  });
+  return list;
+}
 
-// WICHTIG: Liste basiert jetzt auf userStates, nicht auf sockets
-function getUserList() {
-  return Object.keys(userStates).map((sid) => {
-    const st = userStates[sid];
-    const diff = Date.now() - st.lastActive;
-    const away = st.away && diff < AWAY_TIMEOUT;
+// --------------------------------------------------
+// Raum-Infos + Userlisten
+// --------------------------------------------------
+function broadcastRoomState(io) {
+  const counts = {};
+  users.forEach((user) => {
+    const roomId = user.currentRoom || "lobby";
+    counts[roomId] = (counts[roomId] || 0) + 1;
+  });
 
-    return {
-      username: st.username,
-      gender: st.gender,
-      away,
-    };
+  io.emit("room-list", getRoomsForClient(counts));
+
+  ROOMS.forEach((room) => {
+    io.to(room.id).emit("user-list", getUserList(room.id));
   });
 }
 
@@ -218,90 +224,101 @@ function getUserList() {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // USER REGISTER
+  // REGISTER USER
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
     users.set(socket.id, {
       username: cleanName,
       gender: gender || "",
+      away: false,
+      currentRoom: "lobby",
     });
 
-    console.log("User registered:", socket.id, cleanName);
+    socket.join("lobby");
 
     const sid = findSessionIdByUsername(cleanName);
     if (sid && userStates[sid]) {
       const state = userStates[sid];
-      const diff = Date.now() - state.lastActive;
-
-      // ReJoin innerhalb von 2 Minuten → KEIN Join
-      if (state.away && diff < AWAY_TIMEOUT) {
-        state.away = false;
-        state.lastActive = Date.now();
-        if (state.timeoutHandle) {
-          clearTimeout(state.timeoutHandle);
-          state.timeoutHandle = null;
-        }
-        // KEINE emitUserJoined hier
-      } else {
-        // normaler (neuer) Beitritt → Join-Message senden
-        state.away = false;
-        state.lastActive = Date.now();
-        emitUserJoined(io, cleanName);
-      }
-    } else {
-      // kein userState gefunden (Fallback) → normaler Join
-      emitUserJoined(io, cleanName);
+      state.away = false;
+      state.lastActive = Date.now();
     }
 
-    io.emit("user-list", getUserList());
+    socket.emit("room-changed", { roomId: "lobby" });
+    broadcastRoomState(io);
+    emitUserJoined(io, cleanName);
+  });
+
+  // JOIN ROOM
+  socket.on("join-room", ({ roomId, password }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    const room = findRoom(roomId);
+    if (!room) return socket.emit("join-room-error", { message: "Raum existiert nicht." });
+
+    if (room.type === "locked") {
+      return socket.emit("join-room-error", { message: "Dieser Raum ist verschlossen." });
+    }
+
+    if (room.type === "private") {
+      if (!room.password || room.password !== password) {
+        return socket.emit("join-room-error", { message: "Falsches Passwort." });
+      }
+    }
+
+    const oldRoomId = user.currentRoom;
+
+    socket.leave(oldRoomId);
+    socket.join(room.id);
+
+    user.currentRoom = room.id;
+
+    socket.emit("room-changed", { roomId: room.id });
+    broadcastRoomState(io);
   });
 
   // CHAT MESSAGE
-  socket.on("chat-message", (data) => {
+  socket.on("chat-message", (text) => {
     const user = users.get(socket.id);
-    const text = (data?.text || "").toString().trim();
-    if (!text) return;
+    if (!user) return;
 
-    const username = user?.username || "User";
+    const roomId = user.currentRoom || "lobby";
 
-    socket.broadcast.emit("chat-message", {
+    io.to(roomId).emit("chat-message", {
+      username: user.username,
       text,
-      username,
     });
   });
 
-  // DISCONNECT → AWAY SYSTEM
+  // DISCONNECT
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
 
     if (user) {
       const sessionId = findSessionIdByUsername(user.username);
-
       if (sessionId && userStates[sessionId]) {
         const state = userStates[sessionId];
         state.away = true;
         state.lastActive = Date.now();
 
-        // verzögertes Leave
         state.timeoutHandle = setTimeout(() => {
           const diff = Date.now() - state.lastActive;
+
           if (state.away && diff >= AWAY_TIMEOUT) {
             emitUserLeft(io, user.username);
 
             delete userStates[sessionId];
             delete sessions[sessionId];
-
-            // NEU: Liste nach endgültigem Leave aktualisieren
-            io.emit("user-list", getUserList());
           }
+
+          broadcastRoomState(io);
         }, AWAY_TIMEOUT);
       }
     }
 
     users.delete(socket.id);
-    // NEU: sofort nach Disconnect → User bleibt als away in der Liste
-    io.emit("user-list", getUserList());
+    broadcastRoomState(io);
     console.log("Client disconnected:", socket.id);
   });
 });
