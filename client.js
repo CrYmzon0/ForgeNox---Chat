@@ -5,11 +5,14 @@ window.socket = window.socket || io();
 const socket = window.socket;
 
 // DOM-Elemente
-const messagesEl   = document.getElementById("messages");
-const inputEl      = document.getElementById("chatInput");
-const sendBtn      = document.getElementById("sendBtn");
-const userListEl   = document.getElementById("userList");
-const userSearchEl = document.getElementById("userSearch");
+const messagesEl = document.getElementById("messages");
+const inputEl    = document.getElementById("chatInput");
+const sendBtn    = document.getElementById("sendBtn");
+const userListEl = document.getElementById("userList");
+
+// WICHTIG: Nur das Suchfeld in der rechten Userliste auswählen
+// (Input innerhalb des Containers .fn-userlist-search)
+const userSearchEl = document.querySelector(".fn-userlist-search input");
 
 // Username & Gender (kommen vom Server über /me)
 let username = "";
@@ -17,6 +20,16 @@ let gender = "";
 
 // Lokale Kopie der aktuellen Userliste
 let allUsers = [];
+
+// --------------------------------------------------
+// Defaults setzen
+// --------------------------------------------------
+
+// Chat-Eingabefeld unten soll immer diesen Placeholder haben,
+// unabhängig davon, was vorher im HTML stand.
+if (inputEl) {
+  inputEl.placeholder = "Nachricht eingeben...";
+}
 
 // --------------------------------------------------
 // Nachricht im Chat anzeigen
@@ -124,11 +137,8 @@ function renderUserList(filterText = "") {
 
   const q = filterText.trim().toLowerCase();
 
-  // echte Filterung: nur passende User anzeigen
   const list = q
-    ? allUsers.filter((u) =>
-        u.username.toLowerCase().includes(q)
-      )
+    ? allUsers.filter((u) => u.username.toLowerCase().includes(q))
     : [...allUsers];
 
   userListEl.innerHTML = "";
@@ -146,11 +156,12 @@ function renderUserList(filterText = "") {
 }
 
 // --------------------------------------------------
-// Userliste vom Server + Online-Anzahl im Suchfeld
+// Userliste vom Server + Online-Anzahl im User-Suchfeld
 // --------------------------------------------------
 socket.on("user-list", (users) => {
   allUsers = users || [];
 
+  // Nur das rechte Suchfeld wird geändert
   if (userSearchEl) {
     const onlineCount = allUsers.filter((u) => !u.away).length;
     userSearchEl.placeholder = `User suchen (${onlineCount} online)`;
