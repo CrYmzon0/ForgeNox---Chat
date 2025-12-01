@@ -8,19 +8,17 @@ const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const userListEl = document.getElementById("userList");
-const userSearchEl = document.getElementById("userSearch");
 
-if (userSearchEl) {
-  userSearchEl.addEventListener("input", () => {
-    renderUserList(userSearchEl.value);
-  });
-}
-
-// Username und Gender werden NICHT mehr aus der URL gelesen
+// Username & Gender (kommen vom Server über /me)
 let username = "";
 let gender = "";
 
+// Lokale Kopie der aktuellen Userliste
+let allUsers = [];
+
+// --------------------------------------------------
 // Nachricht im Chat anzeigen
+// --------------------------------------------------
 function addMessage({ text, fromSelf = false, userName = "" }) {
   const wrapper = document.createElement("div");
   wrapper.classList.add("fn-msg");
@@ -49,7 +47,9 @@ function addMessage({ text, fromSelf = false, userName = "" }) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+// --------------------------------------------------
 // Nachricht an Server senden
+// --------------------------------------------------
 function sendMessage() {
   const text = inputEl.value.trim();
   if (!text) return;
@@ -75,7 +75,9 @@ inputEl.addEventListener("keydown", (e) => {
   }
 });
 
+// --------------------------------------------------
 // Username & Gender sicher vom Server holen
+// --------------------------------------------------
 fetch("/me")
   .then((res) => res.json())
   .then((data) => {
@@ -95,7 +97,9 @@ fetch("/me")
     });
   });
 
+// --------------------------------------------------
 // Nachrichten von anderen empfangen
+// --------------------------------------------------
 socket.on("chat-message", (data) => {
   addMessage({
     text: data.text,
@@ -104,27 +108,12 @@ socket.on("chat-message", (data) => {
   });
 });
 
-// Userliste aktualisieren + Suchfeld + Online-Anzeige
-let allUsers = []; // NEU oben definieren falls nicht vorhanden
-
-socket.on("user-list", (users) => {
-  allUsers = users || [];
-
-  // Online-Anzahl berechnen (away = false)
-  const onlineCount = allUsers.filter(u => !u.away).length;
-
-  // Placeholder updaten
-  const userSearchEl = document.getElementById("userSearch");
-  if (userSearchEl) {
-    userSearchEl.placeholder = `User suchen (${onlineCount} online)`;
-  }
-
-  // Liste rendern (mit Suchfilter)
-  const filter = userSearchEl ? userSearchEl.value : "";
-  renderUserList(filter);
-});
-
+// --------------------------------------------------
+// Userliste rendern + Suchlogik
+// --------------------------------------------------
 function renderUserList(filterText = "") {
+  if (!userListEl) return;
+
   const q = filterText.trim().toLowerCase();
   let list = [...allUsers];
 
@@ -150,5 +139,31 @@ function renderUserList(filterText = "") {
     }
 
     userListEl.appendChild(li);
+  });
+}
+
+// --------------------------------------------------
+// Userliste vom Server + Online-Anzahl im Placeholder
+// --------------------------------------------------
+socket.on("user-list", (users) => {
+  allUsers = users || [];
+
+  const searchInput = document.getElementById("userSearch");
+  if (searchInput) {
+    const onlineCount = allUsers.filter((u) => !u.away).length;
+    searchInput.placeholder = `User suchen (${onlineCount} online)`;
+  }
+
+  const currentFilter = searchInput ? searchInput.value : "";
+  renderUserList(currentFilter);
+});
+
+// --------------------------------------------------
+// Live-Suche
+// --------------------------------------------------
+const userSearchEl = document.getElementById("userSearch");
+if (userSearchEl) {
+  userSearchEl.addEventListener("input", () => {
+    renderUserList(userSearchEl.value);
   });
 }
