@@ -1,136 +1,142 @@
 // client.js
 
-// eine globale Socket-Verbindung für alle Scripts
+// eine globale Socket-Verbindung für alle Scripts (wird auch von system-messages.js benutzt)
 window.socket = window.socket || io();
 const socket = window.socket;
 
-// DOM-Elemente
-const messagesEl = document.getElementById("messages");
-const inputEl    = document.getElementById("chatInput");
-const sendBtn    = document.getElementById("sendBtn");
-const userListEl = document.getElementById("userList");
+window.addEventListener("DOMContentLoaded", () => {
+  // DOM-Elemente
+  const messagesEl = document.getElementById("messages");
+  const inputEl =
+    document.getElementById("chatInput") ||
+    document.querySelector(".fn-chat-input input");
+  const sendBtn =
+    document.getElementById("sendBtn") ||
+    document.querySelector(".fn-chat-input button");
+  const userListEl = document.getElementById("userList");
 
-// Username & Gender (kommen vom Server über /me)
-let username = "";
-let gender   = "";
+  // Username & Gender (kommen vom Server über /me)
+  let username = "";
+  let gender = "";
 
-// --------------------------------------------------
-// Nachricht im Chat anzeigen
-// --------------------------------------------------
-function addMessage({ text, fromSelf = false, userName = "" }) {
-  if (!messagesEl) return;
+  // --------------------------------------------------
+  // Nachricht im Chat anzeigen
+  // --------------------------------------------------
+  function addMessage({ text, fromSelf = false, userName = "" }) {
+    if (!messagesEl) return;
 
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("fn-msg");
-  wrapper.classList.add(fromSelf ? "fn-msg-me" : "fn-msg-other");
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("fn-msg");
+    wrapper.classList.add(fromSelf ? "fn-msg-me" : "fn-msg-other");
 
-  const meta = document.createElement("div");
-  meta.classList.add("fn-msg-meta");
+    const meta = document.createElement("div");
+    meta.classList.add("fn-msg-meta");
 
-  const displayName = userName || "User";
+    const displayName = userName || "User";
 
-  const displayTime = new Date().toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    const displayTime = new Date().toLocaleTimeString("de-DE", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-  meta.textContent = `${displayName} • ${displayTime}`;
+    meta.textContent = `${displayName} • ${displayTime}`;
 
-  const bubble = document.createElement("div");
-  bubble.classList.add("fn-msg-bubble");
-  bubble.textContent = text;
+    const bubble = document.createElement("div");
+    bubble.classList.add("fn-msg-bubble");
+    bubble.textContent = text;
 
-  wrapper.appendChild(meta);
-  wrapper.appendChild(bubble);
+    wrapper.appendChild(meta);
+    wrapper.appendChild(bubble);
 
-  messagesEl.appendChild(wrapper);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
+    messagesEl.appendChild(wrapper);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 
-// --------------------------------------------------
-// Nachricht an Server senden
-// --------------------------------------------------
-function sendMessage() {
-  if (!inputEl) return;
+  // --------------------------------------------------
+  // Nachricht an Server senden
+  // --------------------------------------------------
+  function sendMessage() {
+    if (!inputEl) return;
 
-  const text = inputEl.value.trim();
-  if (!text) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
 
-  // eigene Nachricht sofort anzeigen
-  addMessage({ text, fromSelf: true, userName: username });
+    // eigene Nachricht sofort anzeigen
+    addMessage({ text, fromSelf: true, userName: username });
 
-  // an Server schicken
-  socket.emit("chat-message", { text });
+    // an Server schicken
+    socket.emit("chat-message", { text });
 
-  inputEl.value = "";
-}
+    inputEl.value = "";
+  }
 
-// Klick auf "Senden"
-if (sendBtn) {
-  sendBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    sendMessage();
-  });
-}
-
-// Enter zum Senden
-if (inputEl) {
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+  // Klick auf "Senden"
+  if (sendBtn) {
+    sendBtn.addEventListener("click", (e) => {
       e.preventDefault();
       sendMessage();
-    }
-  });
-}
+    });
+  }
 
-// --------------------------------------------------
-// Username & Gender sicher vom Server holen
-// --------------------------------------------------
-fetch("/me")
-  .then((res) => res.json())
-  .then((data) => {
-    if (!data.loggedIn) {
-      window.location.href = "/";
-      return;
-    }
+  // Enter zum Senden
+  if (inputEl) {
+    inputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  }
 
-    username = data.username || "Gast";
-    gender   = data.gender || "";
+  // --------------------------------------------------
+  // Username & Gender sicher vom Server holen
+  // --------------------------------------------------
+  fetch("/me")
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.loggedIn) {
+        window.location.href = "/";
+        return;
+      }
 
-    // Registrierung erst NACH Login-Daten
-    socket.emit("register-user", {
-      username,
-      gender,
+      username = data.username || "Gast";
+      gender = data.gender || "";
+
+      // Registrierung erst NACH Login-Daten
+      socket.emit("register-user", {
+        username,
+        gender,
+      });
+    });
+
+  // --------------------------------------------------
+  // Nachrichten von anderen empfangen
+  // --------------------------------------------------
+  socket.on("chat-message", (data) => {
+    addMessage({
+      text: data.text,
+      fromSelf: false,
+      userName: data.username,
     });
   });
 
-// --------------------------------------------------
-// Nachrichten von anderen empfangen
-// --------------------------------------------------
-socket.on("chat-message", (data) => {
-  addMessage({
-    text: data.text,
-    fromSelf: false,
-    userName: data.username,
-  });
-});
+  // --------------------------------------------------
+  // Userliste aktualisieren (ohne Suche / ohne Counter)
+  // --------------------------------------------------
+  socket.on("user-list", (users) => {
+    if (!userListEl) return;
 
-// --------------------------------------------------
-// Userliste aktualisieren (ohne Suche / ohne Online-Counter)
-// --------------------------------------------------
-socket.on("user-list", (users) => {
-  if (!userListEl) return;
+    userListEl.innerHTML = "";
+    (users || []).forEach((user) => {
+      const li = document.createElement("li");
+      li.classList.add("fn-userlist-item");
+      li.textContent = user.username;
 
-  userListEl.innerHTML = "";
-  (users || []).forEach((user) => {
-    const li = document.createElement("li");
-    li.classList.add("fn-userlist-item");
-    li.textContent = user.username;
+      if (user.away) {
+        li.classList.add("fn-user-away");
+      }
 
-    if (user.away) {
-      li.classList.add("fn-user-away");
-    }
-
-    userListEl.appendChild(li);
+      userListEl.appendChild(li);
+    });
   });
 });
