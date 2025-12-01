@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="forge-nox-chat.css" />
   <link rel="stylesheet" href="system-messages.css" />
-  <link rel="stylesheet" href="forge-nox-rooms.css" />12
+  <link rel="stylesheet" href="forge-nox-rooms.css" />
 </head>
 <body class="fn-body">
 
@@ -33,14 +33,23 @@
 
     <!-- USERLISTE -->
     <aside class="fn-userlist">
+
+  <!-- Suchfeld -->
   <div class="fn-userlist-search">
     <input type="text" id="userSearch" placeholder="User suchen." />
   </div>
 
+  <!-- RAUMLISTE -->
+  <ul class="fn-roomlist" id="roomList">
+    <!-- Räume werden hier dynamisch eingefügt -->
+  </ul>
+
+  <!-- USERLISTE -->
   <ul class="fn-userlist-list" id="userList">
-        <!-- Dynamisch gefüllt via JS -->
-      </ul>
-    </aside>
+    <!-- User werden hier dynamisch eingefügt -->
+  </ul>
+
+</aside>
 
   </div>
 
