@@ -279,17 +279,21 @@ io.on("connection", (socket) => {
   });
 
   // CHAT MESSAGE
-  socket.on("chat-message", (text) => {
-    const user = users.get(socket.id);
-    if (!user) return;
+socket.on("chat-message", (data) => {
+  const user = users.get(socket.id);
+  if (!user) return;
 
-    const roomId = user.currentRoom || "lobby";
+  const text = (data && data.text ? String(data.text) : "").trim();
+  if (!text) return;
 
-    io.to(roomId).emit("chat-message", {
-      username: user.username,
-      text,
-    });
+  const roomId = user.currentRoom || "lobby";
+
+  // nur an die anderen im Raum schicken, nicht an den Sender selbst
+  socket.to(roomId).emit("chat-message", {
+    username: user.username,
+    text,
   });
+});
 
   // DISCONNECT
   socket.on("disconnect", () => {
