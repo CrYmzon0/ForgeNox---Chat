@@ -1,6 +1,7 @@
 /* forge-nox-rooms.css */
 /* Rechte Spalte mit Räumen & Usern */
 
+/* Falls du irgendwann eine eigene Sidebar nutzt – aktuell bei dir nicht im Einsatz */
 .fn-sidebar {
   display: flex;
   flex-direction: column;
@@ -8,14 +9,17 @@
   height: 100%;
 }
 
-/* Raumliste */
+/* Raumliste-Container (bei dir: <ul id="roomList" class="fn-roomlist">) */
 .fn-roomlist {
   background: radial-gradient(circle at top left, #2b1647 0, #10081b 55%, #07030b 100%);
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+  list-style: none;
+  margin: 10px 0;
 }
 
+/* (Reserve, falls du später eine separate Liste brauchst) */
 .fn-roomlist-title {
   font-size: 0.8rem;
   letter-spacing: 0.08em;
@@ -30,21 +34,28 @@
   padding: 0;
 }
 
-/* Einzelner Raum-Eintrag */
+/* Einzelner Raum-Eintrag (Karte) */
 .fn-room {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 6px 10px;
-  margin-bottom: 4px;
-  border-radius: 999px;
+  flex-direction: column; /* Header oben, Userliste darunter */
+  gap: 4px;
+  padding: 6px 10px 8px;
+  margin-bottom: 6px;
+  border-radius: 16px;
   font-size: 0.85rem;
   cursor: pointer;
   transition:
     background 0.15s ease,
     transform 0.05s ease,
     box-shadow 0.15s ease;
+}
+
+/* Kopfzeile in der Raumkarte: Name links, Usercount rechts */
+.fn-room-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .fn-room span.fn-room-name {
@@ -93,10 +104,23 @@
   font-size: 0.8rem;
 }
 
-/* Userliste (bestehende Klassen kannst du beibehalten) */
+/* Userliste-Container (rechte Box insgesamt, nicht pro Raum) */
 .fn-userlist {
   background: rgba(7, 3, 13, 0.9);
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+/* Userliste, wenn sie INSIDE einer Raumkarte hängt */
+.fn-room .fn-userlist-list {
+  margin-top: 6px;
+  padding-left: 14px; /* leicht eingerückt unter dem Raum */
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  list-style: none;
+}
+
+/* Optional: etwas engerer Zeilenabstand innerhalb der Karte */
+.fn-room .fn-userlist-list li {
+  margin: 2px 0;
 }
