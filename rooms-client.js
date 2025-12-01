@@ -1,20 +1,34 @@
 // rooms-client.js
-// Steuert die Anzeige der Räume rechts (ohne Userliste hineinzuziehen)
+// Räume rendern und die Userliste unter dem aktiven Raum anzeigen
 
 (function () {
   const socket = window.socket || io();
 
   window.addEventListener("DOMContentLoaded", () => {
     const roomListEl = document.getElementById("roomList");
+    const userListEl = document.getElementById("userList");
     const roomTitleEl = document.querySelector("[data-room-title]");
 
-    if (!roomListEl) return;
+    if (!roomListEl || !userListEl) return;
 
     let rooms = [];
     let currentRoomId = "lobby";
 
     // --------------------------------------------------
-    // Räume rendern (nur Karten, keine Userliste)
+    // Userliste unter die aktive Raumkarte hängen
+    // --------------------------------------------------
+    function attachUserListToActiveRoom() {
+      const activeLi = roomListEl.querySelector(
+        '.fn-room.fn-room--active[data-room-id="' + currentRoomId + '"]'
+      );
+      if (!activeLi) return;
+
+      // sicherstellen, dass die Liste am Ende der Karte hängt
+      activeLi.appendChild(userListEl);
+    }
+
+    // --------------------------------------------------
+    // Räume rendern
     // --------------------------------------------------
     function renderRooms() {
       roomListEl.innerHTML = "";
@@ -25,7 +39,6 @@
         li.dataset.roomId = room.id;
         li.dataset.roomType = room.type;
 
-        // Typ-spezifische Klasse
         li.classList.add(`fn-room--${room.type}`);
         if (room.id === currentRoomId) {
           li.classList.add("fn-room--active");
@@ -49,6 +62,9 @@
 
         roomListEl.appendChild(li);
       });
+
+      // Userliste unter den aktiven Raum ziehen
+      attachUserListToActiveRoom();
     }
 
     // --------------------------------------------------

@@ -1,9 +1,9 @@
 /* forge-nox-rooms.css */
-/* Räume in der rechten Sidebar – Userliste bleibt separat */
+/* Räume in der rechten Sidebar – Userliste gruppiert unter dem aktiven Raum */
 
 /* Liste der Räume (ul#roomList) */
 .fn-roomlist {
-  background: radial-gradient(circle at top left, #2b1647 0, #10081b 55%, #07030b 100%);
+  background: rgba(7, 3, 13, 0.9);
   border-radius: 18px;
   padding: 10px 12px;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -11,12 +11,18 @@
   margin: 10px 0 12px;
 }
 
-/* Einzelner Raum (li.fn-room) */
+/* Einzelner Raum-Block */
 .fn-room {
+  list-style: none;
+  margin-bottom: 8px;
+}
+
+/* Nur der Header bekommt den „Pill“-Look */
+.fn-room-header {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
   padding: 6px 10px;
-  margin-bottom: 6px;
   border-radius: 14px;
   font-size: 0.85rem;
   cursor: pointer;
@@ -24,18 +30,9 @@
     background 0.15s ease,
     transform 0.05s ease,
     box-shadow 0.15s ease;
-  list-style: none;
 }
 
-/* Kopfzeile innerhalb des Raums: Name links, Count rechts */
-.fn-room-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  gap: 6px;
-}
-
+/* Name + Counter */
 .fn-room-name {
   white-space: nowrap;
   overflow: hidden;
@@ -47,27 +44,27 @@
   opacity: 0.8;
 }
 
-/* Farbvarianten je Raumtyp */
-.fn-room--public {
+/* Farbvarianten je Raumtyp – nur auf Header */
+.fn-room--public .fn-room-header {
   background: linear-gradient(90deg, rgba(172, 132, 255, 0.35), rgba(120, 89, 255, 0.18));
 }
 
-.fn-room--private {
+.fn-room--private .fn-room-header {
   background: linear-gradient(90deg, rgba(255, 195, 113, 0.35), rgba(230, 140, 70, 0.15));
 }
 
-.fn-room--locked {
+.fn-room--locked .fn-room-header {
   background: linear-gradient(90deg, rgba(255, 140, 120, 0.35), rgba(180, 60, 60, 0.18));
 }
 
-/* Aktiver Raum */
-.fn-room--active {
+/* Aktiver Raum – etwas hervorgehoben */
+.fn-room--active .fn-room-header {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
 /* Hover-Effekt */
-.fn-room:hover {
+.fn-room-header:hover {
   background: rgba(255, 255, 255, 0.10);
 }
 
@@ -84,7 +81,7 @@
   font-size: 0.85rem;
 }
 
-/* Public-Raum bekommt kein Emoji; falls du willst: */
+/* (Optional) Public-Raum-Emoji */
 /*
 .fn-room--public .fn-room-name::before {
   content: "🌐";
@@ -93,7 +90,7 @@
 }
 */
 
-/* Userliste unten in der Box – NICHT in den Räumen */
+/* Userliste-Container (gesamte rechte Box) – bleibt wie gehabt */
 .fn-userlist {
   background: rgba(7, 3, 13, 0.9);
   border-radius: 18px;
@@ -101,5 +98,15 @@
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
-/* Wichtig: keine Spezial-Regeln mehr für .fn-room .fn-userlist-list,
-   damit die Userliste frei und wie vorher gerendert wird. */
+/* Userliste unter dem aktiven Raum – kein eigener Pill-Background */
+.fn-room .fn-userlist-list {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  list-style: none;
+}
+
+/* Einzelne User ein bisschen enger setzen */
+.fn-room .fn-userlist-list li {
+  margin: 2px 0;
+}
