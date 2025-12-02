@@ -27,6 +27,16 @@
           />
         </label>
 
+        <label class="fn-label fn-password-row" style="display: none;">
+  Passwort (falls Name registriert)
+  <input
+    type="password"
+    name="password"
+    class="fn-input"
+    placeholder="Passwort eingeben"
+  />
+</label>
+
         <label class="fn-label">
           Geschlecht
           <select name="gender" class="fn-select" required>
@@ -65,13 +75,93 @@
   const username = form.querySelector("input[name='username']");
   const gender = form.querySelector("select[name='gender']");
   const rules = form.querySelector("input[name='rules']");
+  const passwordRow = form.querySelector(".fn-password-row");
+  const passwordInput = form.querySelector("input[name='password']");
 
+  // --------------------------------------------------
+  // Helper: Fehlerbox
+  // --------------------------------------------------
+  function showErrors(list) {
+    const box = document.querySelector(".fn-error-box");
+    box.innerHTML = list.map((e) => `<li>${e}</li>`).join("");
+    box.style.display = "block";
+  }
+
+  function clearErrors() {
+    const box = document.querySelector(".fn-error-box");
+    box.innerHTML = "";
+    box.style.display = "none";
+  }
+
+  // --------------------------------------------------
+  // Prüfen, ob Username registriert ist → Passwortfeld ein/aus
+  // --------------------------------------------------
+  async function updatePasswordVisibility() {
+    const nameValue = username.value.trim();
+    if (!nameValue) {
+      passwordRow.style.display = "none";
+      passwordRow.classList.remove("is-visible");
+      passwordInput.required = false;
+      passwordInput.value = "";
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "/check-username?username=" + encodeURIComponent(nameValue)
+      );
+      const data = await res.json();
+
+      if (data.registered) {
+        passwordRow.style.display = "flex";
+        passwordRow.classList.add("is-visible");
+        passwordInput.required = true;
+      } else {
+        passwordRow.style.display = "none";
+        passwordRow.classList.remove("is-visible");
+        passwordInput.required = false;
+        passwordInput.value = "";
+      }
+    } catch (e) {
+      // Im Zweifel: kein Passwort erzwingen
+      passwordRow.style.display = "none";
+      passwordRow.classList.remove("is-visible");
+      passwordInput.required = false;
+    }
+  }
+
+  username.addEventListener("blur", updatePasswordVisibility);
+  username.addEventListener("input", () => {
+    clearErrors();
+  });
+
+  // --------------------------------------------------
+  // URL-Parameter (Fehler vom Server)
+  // --------------------------------------------------
+  (function handleServerError() {
+    const params = new URLSearchParams(window.location.search);
+    const loginError = params.get("loginError");
+    const prefillName = params.get("username");
+
+    if (prefillName) {
+      username.value = prefillName;
+      updatePasswordVisibility();
+    }
+
+    if (loginError === "pw") {
+      showErrors(["Falsches Passwort für diesen Benutzernamen."]);
+    }
+  })();
+
+  // --------------------------------------------------
+  // Submit-Validierung
+  // --------------------------------------------------
   form.addEventListener("submit", function (e) {
     let errors = [];
 
-    // Benutzername prüfen
     const nameValue = username.value.trim();
 
+    // Benutzername prüfen (wie bisher)
     if (!nameValue) {
       errors.push("Bitte wähle einen Benutzernamen.");
     } else {
@@ -100,27 +190,23 @@
       errors.push("Bitte bestätige die Regeln von Forge-Nox.");
     }
 
+    // Falls Name registriert & Passwortfeld sichtbar → Passwort prüfen
+    if (
+      passwordRow.classList.contains("is-visible") &&
+      !passwordInput.value.trim()
+    ) {
+      errors.push("Bitte gib dein Passwort ein.");
+    }
+
     if (errors.length > 0) {
       e.preventDefault();
       showErrors(errors);
       return;
     }
 
-    // Erfolgsfall: Fehler leeren, Formular NORMAL abschicken
     clearErrors();
+    // Formular wird normal abgeschickt → /login
   });
-
-  function showErrors(list) {
-    const box = document.querySelector(".fn-error-box");
-    box.innerHTML = list.map((e) => `<li>${e}</li>`).join("");
-    box.style.display = "block";
-  }
-
-  function clearErrors() {
-    const box = document.querySelector(".fn-error-box");
-    box.innerHTML = "";
-    box.style.display = "none";
-  }
 </script>
 </body>
 </html>

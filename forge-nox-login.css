@@ -201,3 +201,11 @@ body.fn-body {
   list-style: disc;
   padding-left: 22px;
 }
+
+.fn-password-row {
+  display: none;
+}
+
+.fn-password-row.is-visible {
+  display: flex;
+}

@@ -112,6 +112,8 @@ socket.on("user-list", (users) => {
       username = data.username || "Gast";
       gender = data.gender || "";
 
+      window.currentUsername = username;
+
       // Registrierung erst NACH Login-Daten
       socket.emit("register-user", {
         username,

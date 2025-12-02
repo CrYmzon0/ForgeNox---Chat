@@ -4,9 +4,12 @@
   <meta charset="UTF-8" />
   <title>Forge-Nox | Livechat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="forge-nox-chat.css" />
   <link rel="stylesheet" href="system-messages.css" />
   <link rel="stylesheet" href="forge-nox-rooms.css" />
+  <link rel="stylesheet" href="forge-nox-profile.css" />
 </head>
 <body class="fn-body">
 
@@ -17,8 +20,9 @@
       <header class="fn-chat-header fn-chat-header-center">
         <h2 class="fn-logo-chat">ForgeNox</h2>
         <div class="fn-chat-header-room">
-  Raum: <span data-room-title>Hauptlobby</span>
-</div>
+          Raum: <span data-room-title>Hauptlobby</span>
+        </div>
+        <button class="fn-profile-open-btn" id="profileOpenBtn">Profil</button>
       </header>
 
       <div class="fn-chat-messages" id="messages">
@@ -26,38 +30,69 @@
       </div>
 
       <footer class="fn-chat-input">
-  <input type="text" id="chatInput" placeholder="Nachricht senden." />
-  <button id="sendBtn">Senden</button>
-</footer>
+        <input type="text" id="chatInput" placeholder="Nachricht senden." />
+        <button id="sendBtn">Senden</button>
+      </footer>
     </section>
 
-    <!-- USERLISTE -->
+    <!-- USERLISTE + RÄUME -->
     <aside class="fn-userlist">
 
-  <!-- Suchfeld -->
-  <div class="fn-userlist-search">
-    <input type="text" id="userSearch" placeholder="User suchen." />
+      <!-- Suchfeld -->
+      <div class="fn-userlist-search">
+        <input type="text" id="userSearch" placeholder="User suchen." />
+      </div>
+
+      <!-- RAUMLISTE -->
+      <ul class="fn-roomlist" id="roomList">
+        <!-- Räume werden hier dynamisch eingefügt -->
+      </ul>
+
+      <!-- USERLISTE -->
+      <ul class="fn-userlist-list" id="userList">
+        <!-- User werden hier dynamisch eingefügt -->
+      </ul>
+
+    </aside>
+
   </div>
 
-  <!-- RAUMLISTE -->
-  <ul class="fn-roomlist" id="roomList">
-    <!-- Räume werden hier dynamisch eingefügt -->
-  </ul>
+  <!-- PROFIL / REGISTRIERUNG MODAL -->
+  <div class="fn-profile-backdrop" id="profileModal" aria-hidden="true">
+    <div class="fn-profile-modal">
+      <button class="fn-profile-close" id="profileCloseBtn" aria-label="Schließen">
+        ×
+      </button>
 
-  <!-- USERLISTE -->
-  <ul class="fn-userlist-list" id="userList">
-    <!-- User werden hier dynamisch eingefügt -->
-  </ul>
+      <h3 class="fn-profile-title">Profil &amp; Registrierung</h3>
+      <p class="fn-profile-username">
+        Angemeldet als <span id="profileUsername">-</span>
+      </p>
 
-</aside>
-
+      <div class="fn-profile-section">
+        <h4>Benutzernamen schützen</h4>
+        <p class="fn-profile-desc">
+          Lege ein Passwort fest, damit nur du dich mit diesem Namen einloggen kannst.
+        </p>
+        <input
+          type="password"
+          id="profilePassword"
+          class="fn-profile-input"
+          placeholder="Neues Passwort (min. 4 Zeichen)"
+        />
+        <button id="profileSaveBtn" class="fn-profile-btn-primary">
+          Passwort speichern
+        </button>
+        <p class="fn-profile-message" id="profileMessage"></p>
+      </div>
+    </div>
   </div>
 
-  <!-- Socket.IO Client wird vom Server ausgeliefert -->
+  <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
-  <!-- Dein Client-Code -->
   <script src="/client.js"></script>
   <script src="system-messages.js"></script>
   <script src="rooms-client.js"></script>
+  <script src="profile-client.js"></script>
 </body>
 </html>

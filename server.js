@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+const auth = require("./auth-server");
 
 const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
 const { ROOMS, findRoom, getRoomsForClient } = require("./rooms-server");
@@ -39,17 +40,29 @@ function findSessionIdByUsername(username) {
 // LOGIN ENDPOINT
 // --------------------------------------------------
 app.post("/login", (req, res) => {
-  const { username, gender } = req.body;
+  const { username, gender, password } = req.body;
 
-  if (!username || !gender) {
+  const cleanName = (username || "").toString().trim();
+
+  if (!cleanName || !gender) {
     return res.redirect("/");
   }
 
+  // Wenn Name registriert ist → Passwort prüfen
+  if (auth.isRegistered(cleanName)) {
+    if (!password || !auth.verifyPassword(cleanName, password)) {
+      // Falsches oder fehlendes Passwort → zurück auf Login mit Fehlermeldung
+      return res.redirect(
+        "/?loginError=pw&username=" + encodeURIComponent(cleanName)
+      );
+    }
+  }
+
   const sessionId = crypto.randomUUID();
-  sessions[sessionId] = { username, gender };
+  sessions[sessionId] = { username: cleanName, gender };
 
   userStates[sessionId] = {
-    username,
+    username: cleanName,
     gender,
     lastActive: Date.now(),
     away: false,
@@ -57,7 +70,6 @@ app.post("/login", (req, res) => {
     currentRoom: "lobby",
   };
 
-  // Cookie setzen
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
     sameSite: "strict",
@@ -65,6 +77,17 @@ app.post("/login", (req, res) => {
   });
 
   res.redirect(`/chat?sid=${sessionId}`);
+});
+
+// --------------------------------------------------
+// Prüfen, ob Username bereits registriert ist
+// --------------------------------------------------
+app.get("/check-username", (req, res) => {
+  const name = (req.query.username || "").toString().trim();
+  if (!name) {
+    return res.json({ registered: false });
+  }
+  return res.json({ registered: auth.isRegistered(name) });
 });
 
 // --------------------------------------------------
@@ -185,6 +208,33 @@ app.get("/me", (req, res) => {
 });
 
 // --------------------------------------------------
+// Profil: aktuellen Benutzernamen mit Passwort schützen
+// --------------------------------------------------
+app.post("/register-username", (req, res) => {
+  const sid = req.cookies.sessionId;
+
+  if (!sid || !sessions[sid] || !userStates[sid]) {
+    return res.status(401).json({ ok: false, error: "NOT_LOGGED_IN" });
+  }
+
+  const { password } = req.body;
+  const session = sessions[sid];
+
+  if (!password || String(password).length < 4) {
+    return res
+      .status(400)
+      .json({ ok: false, error: "PASSWORD_WEAK" });
+  }
+
+  const result = auth.registerUser(session.username, password);
+  if (!result.ok) {
+    return res.status(400).json(result);
+  }
+
+  return res.json({ ok: true });
+});
+
+// --------------------------------------------------
 // Userliste basierend auf Raum
 // --------------------------------------------------
 function getUserList(roomId) {
@@ -279,21 +329,21 @@ io.on("connection", (socket) => {
   });
 
   // CHAT MESSAGE
-socket.on("chat-message", (data) => {
-  const user = users.get(socket.id);
-  if (!user) return;
+  socket.on("chat-message", (data) => {
+    const user = users.get(socket.id);
+    if (!user) return;
 
-  const text = (data && data.text ? String(data.text) : "").trim();
-  if (!text) return;
+    const text = (data && data.text ? String(data.text) : "").trim();
+    if (!text) return;
 
-  const roomId = user.currentRoom || "lobby";
+    const roomId = user.currentRoom || "lobby";
 
-  // nur an die anderen im Raum schicken, nicht an den Sender selbst
-  socket.to(roomId).emit("chat-message", {
-    username: user.username,
-    text,
+    // nur an die anderen im Raum schicken, nicht an den Sender selbst
+    socket.to(roomId).emit("chat-message", {
+      username: user.username,
+      text,
+    });
   });
-});
 
   // DISCONNECT
   socket.on("disconnect", () => {

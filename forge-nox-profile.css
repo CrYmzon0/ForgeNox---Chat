@@ -1,0 +1,125 @@
+/* ================================
+   Forge-Nox Profil / Registrierung
+   ================================ */
+
+.fn-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.fn-profile-backdrop.is-visible {
+  display: flex;
+}
+
+.fn-profile-modal {
+  background: #1d1d22;
+  border: 2px solid #3a3a44;
+  padding: 20px;
+  width: 360px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.55);
+  position: relative;
+  animation: fadeIn 0.18s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fn-profile-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #bbb;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.fn-profile-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #fff;
+  text-align: center;
+}
+
+.fn-profile-username {
+  font-size: 15px;
+  color: #ccc;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.fn-profile-section h4 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 16px;
+}
+
+.fn-profile-desc {
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+.fn-profile-input {
+  width: 100%;
+  padding: 10px;
+  background: #2a2a33;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.fn-profile-btn-primary {
+  width: 100%;
+  padding: 10px;
+  background: #5b4bce;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.15s;
+}
+
+.fn-profile-btn-primary:hover {
+  background: #6e5df5;
+}
+
+.fn-profile-message {
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.fn-profile-message--ok {
+  color: #44e37a;
+}
+
+.fn-profile-message--error {
+  color: #ff6b6b;
+}
+
+/* Button im Chat-Header */
+.fn-profile-open-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  background: #333;
+  border: 1px solid #555;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.fn-profile-open-btn:hover {
+  background: #444;
+}
