@@ -2,6 +2,11 @@
    Forge-Nox Profil / Registrierung
    ================================ */
 
+/* Header als Bezugspunkt für den Profil-Button */
+.fn-chat-header {
+  position: relative;
+}
+
 .fn-profile-backdrop {
   position: fixed;
   inset: 0;
@@ -111,23 +116,28 @@
   color: #ff7b7b;
 }
 
-/* Profil-Button oben rechts */
+/* Profil-Button oben rechts im Header */
 .fn-profile-open-btn {
-  margin-left: auto;       /* schiebt Button nach rechts */
-  margin-right: 20px;      /* Abstand zum Rand */
+  position: absolute;
+  right: 32px;             /* Abstand vom rechten Rand */
+  top: 50%;                /* vertikal mittig im Header */
+  transform: translateY(-50%);
   padding: 8px 16px;
-  background: linear-gradient(135deg, #a874e4, #7f5bd9);
+  background: linear-gradient(135deg, #b279ff, #8a5cf0);
   border: none;
   color: #f8eaff;
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: 0.15s ease-out;
-  box-shadow: 0 0 6px rgba(0,0,0,0.4);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  transition:
+    background 0.15s ease-out,
+    transform 0.1s ease-out,
+    box-shadow 0.15s ease-out;
 }
 
 .fn-profile-open-btn:hover {
-  background: linear-gradient(135deg, #b789ff, #8c66f0);
-  transform: translateY(-1px);
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  background: linear-gradient(135deg, #c28bff, #9a6cff);
+  transform: translateY(-52%);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.7);
 }
