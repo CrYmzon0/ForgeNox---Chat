@@ -59,32 +59,47 @@
 
   <!-- PROFIL / REGISTRIERUNG MODAL -->
   <div class="fn-profile-backdrop" id="profileModal" aria-hidden="true">
-    <div class="fn-profile-modal">
-      <button class="fn-profile-close" id="profileCloseBtn" aria-label="Schließen">
-        ×
-      </button>
+  <div class="fn-profile-modal">
+    <button class="fn-profile-close" id="profileCloseBtn" aria-label="Schließen">
+      ×
+    </button>
 
-      <h3 class="fn-profile-title">Profil &amp; Registrierung</h3>
-      <p class="fn-profile-username">
-        Angemeldet als <span id="profileUsername">-</span>
+    <h3 class="fn-profile-title">Profil &amp; Registrierung</h3>
+    <p class="fn-profile-username">
+      Angemeldet als <span id="profileUsername">-</span>
+    </p>
+
+    <!-- Abschnitt: Passwort setzen / ändern -->
+    <div class="fn-profile-section" id="profileSectionSetup">
+      <h4>Benutzernamen schützen</h4>
+      <p class="fn-profile-desc">
+        Lege ein Passwort fest, damit nur du dich mit diesem Namen einloggen kannst.
       </p>
+      <input
+        type="password"
+        id="profilePassword"
+        class="fn-profile-input"
+        placeholder="Neues Passwort (min. 4 Zeichen)"
+      />
+      <button id="profileSaveBtn" class="fn-profile-btn-primary">
+        Passwort speichern
+      </button>
+      <p class="fn-profile-message" id="profileMessage"></p>
+    </div>
 
-      <div class="fn-profile-section">
-        <h4>Benutzernamen schützen</h4>
-        <p class="fn-profile-desc">
-          Lege ein Passwort fest, damit nur du dich mit diesem Namen einloggen kannst.
-        </p>
-        <input
-          type="password"
-          id="profilePassword"
-          class="fn-profile-input"
-          placeholder="Neues Passwort (min. 4 Zeichen)"
-        />
-        <button id="profileSaveBtn" class="fn-profile-btn-primary">
-          Passwort speichern
-        </button>
-        <p class="fn-profile-message" id="profileMessage"></p>
-      </div>
+    <!-- Abschnitt: Passwort bereits vorhanden -->
+    <div class="fn-profile-section" id="profileSectionExisting">
+      <h4>Passwort vorhanden</h4>
+      <p class="fn-profile-desc">
+        Für diesen Benutzernamen ist bereits ein Passwort gespeichert.
+      </p>
+      <button id="profileShowBtn" class="fn-profile-btn-secondary">
+        Passwort anzeigen
+      </button>
+      <button id="profileChangeBtn" class="fn-profile-btn-primary">
+        Neues Passwort festlegen
+      </button>
+      <p class="fn-profile-password-display" id="profilePasswordDisplay"></p>
     </div>
   </div>
 

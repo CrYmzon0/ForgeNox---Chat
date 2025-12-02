@@ -299,6 +299,42 @@ io.on("connection", (socket) => {
     emitUserJoined(io, cleanName);
   });
 
+  // --------------------------------------------------
+// Profil-Info: Hat aktueller User ein Passwort?
+// --------------------------------------------------
+app.get("/profile-info", (req, res) => {
+  const sid = req.cookies.sessionId;
+
+  if (!sid || !sessions[sid] || !userStates[sid]) {
+    return res.status(401).json({ ok: false, error: "NOT_LOGGED_IN" });
+  }
+
+  const session = sessions[sid];
+  const hasPw = auth.hasPassword(session.username);
+
+  return res.json({ ok: true, hasPassword: hasPw });
+});
+
+// --------------------------------------------------
+// Profil: Passwort im Klartext anzeigen
+// --------------------------------------------------
+app.post("/profile-show-password", (req, res) => {
+  const sid = req.cookies.sessionId;
+
+  if (!sid || !sessions[sid] || !userStates[sid]) {
+    return res.status(401).json({ ok: false, error: "NOT_LOGGED_IN" });
+  }
+
+  const session = sessions[sid];
+  const pw = auth.getPlainPassword(session.username);
+
+  if (!pw) {
+    return res.status(404).json({ ok: false, error: "NO_PASSWORD" });
+  }
+
+  return res.json({ ok: true, password: pw });
+});
+
   // JOIN ROOM
   socket.on("join-room", ({ roomId, password }) => {
     const user = users.get(socket.id);
