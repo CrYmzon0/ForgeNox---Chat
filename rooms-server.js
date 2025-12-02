@@ -7,18 +7,18 @@
 const ROOMS = [
   {
     id: "lobby",
-    name: "Hauptlobby",
+    name: "Lobby",
     type: "public",
   },
   {
-    id: "vip",
-    name: "VIP-Lounge",
+    id: "Stammtisch",
+    name: "Stammtisch",
     type: "private",
-    password: "vip123", // nur Beispiel
+    password: "stammi312", // nur Beispiel
   },
   {
     id: "staff",
-    name: "Backstage",
+    name: "Teamzone",
     type: "locked",
   },
 ];
