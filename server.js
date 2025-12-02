@@ -48,6 +48,9 @@ app.post("/login", (req, res) => {
     return res.redirect("/");
   }
 
+  // Standardmäßig nehmen wir die Eingabe
+  let effectiveName = cleanName;
+
   // Wenn Name registriert ist → Passwort prüfen
   if (auth.isRegistered(cleanName)) {
     if (!password || !auth.verifyPassword(cleanName, password)) {
@@ -56,13 +59,16 @@ app.post("/login", (req, res) => {
         "/?loginError=pw&username=" + encodeURIComponent(cleanName)
       );
     }
+
+    // Ab hier IMMER die bei der Registrierung gespeicherte Schreibweise verwenden
+    effectiveName = auth.getCanonicalUsername(cleanName);
   }
 
   const sessionId = crypto.randomUUID();
-  sessions[sessionId] = { username: cleanName, gender };
+  sessions[sessionId] = { username: effectiveName, gender };
 
   userStates[sessionId] = {
-    username: cleanName,
+    username: effectiveName,
     gender,
     lastActive: Date.now(),
     away: false,

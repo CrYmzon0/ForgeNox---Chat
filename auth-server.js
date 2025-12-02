@@ -79,6 +79,15 @@ function getPlainPassword(username) {
   return entry && entry.passwordPlain ? entry.passwordPlain : null;
 }
 
+// Gibt die bei der Registrierung gespeicherte Schreibweise zurück
+function getCanonicalUsername(username) {
+  const key = normalizeName(username);
+  const entry = registeredUsers[key];
+  // Falls registriert → gespeicherten Namen (mit Original-Groß/Klein)
+  // sonst einfach den übergebenen Namen zurückgeben
+  return entry && entry.username ? entry.username : username;
+}
+
 loadUsers();
 
 module.exports = {
@@ -87,4 +96,6 @@ module.exports = {
   verifyPassword,
   hasPassword,
   getPlainPassword,
+  getCanonicalUsername,   // <- NEU
 };
+
