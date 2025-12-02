@@ -1,48 +1,69 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Wiederverbinden – Forge-Nox</title>
-  <link rel="stylesheet" href="forge-nox-relogin.css">
+  <meta charset="UTF-8" />
+  <title>Forge-Nox | Zurück im Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="forge-nox-relogin.css" />
 </head>
-
 <body class="fn-body">
-  <div class="fn-relogin-card">
-    <h1>Willkommen zurück</h1>
-    <p id="fn-relogin-user"></p>
+  <div class="fn-bg-gradient"></div>
 
-    <div class="fn-relogin-buttons">
-      <button id="fn-relogin-continue">Weiter im Chat</button>
-      <button id="fn-relogin-logout">Abmelden</button>
-    </div>
-  </div>
+  <main class="fn-container">
+    <section class="fn-card">
+      <h1 class="fn-logo">Forge<span>Nox</span></h1>
+      <p class="fn-subtitle">Willkommen zurück</p>
+
+      <p class="fn-relogin-text">
+        Du warst zuletzt eingeloggt als
+        <strong id="reloginUsername">unbekannt</strong>.
+      </p>
+
+      <div class="fn-relogin-buttons">
+        <button
+          class="fn-btn-primary"
+          type="button"
+          id="continueBtn"
+        >
+          Weiter im Chat
+        </button>
+
+        <button
+          class="fn-btn-secondary"
+          type="button"
+          id="logoutBtn"
+        >
+          Abmelden
+        </button>
+      </div>
+    </section>
+  </main>
 
   <script>
+    // Username für den Hinweis aus /me holen
     fetch("/me")
-      .then(r => r.json())
-      .then(data => {
-        // nur wenn eingeloggt + away → ReLogin erlaubt
-        if (!data.loggedIn || !data.away) {
-          window.location.href = "/";
-          return;
+      .then((res) => res.json())
+      .then((data) => {
+        const span = document.getElementById("reloginUsername");
+        if (data && data.loggedIn && data.username) {
+          span.textContent = data.username;
+        } else {
+          span.textContent = "unbekannt";
         }
-
-        document.getElementById("fn-relogin-user").textContent =
-          "Du warst zuletzt eingeloggt als " + data.username;
-
-        // WICHTIG: als bestätigter ReLogin → /chat?relogin=1
-        document.getElementById("fn-relogin-continue").onclick = () => {
-          window.location.href = "/chat?relogin=1";
-        };
-
-        // Logout muss über Server gehen (httpOnly-Cookie!)
-        document.getElementById("fn-relogin-logout").onclick = () => {
-          window.location.href = "/logout";
-        };
       })
       .catch(() => {
-        window.location.href = "/";
+        document.getElementById("reloginUsername").textContent = "unbekannt";
       });
+
+    // Buttons verdrahten
+    document.getElementById("continueBtn").addEventListener("click", () => {
+      // wichtig: ?relogin=1, damit /chat weiß, dass dies ein Re-Login ist
+      window.location.href = "/chat?relogin=1";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      window.location.href = "/logout";
+    });
   </script>
 </body>
 </html>
