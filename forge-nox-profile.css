@@ -17,12 +17,13 @@
 }
 
 .fn-profile-modal {
-  background: #1d1d22;
-  border: 2px solid #3a3a44;
-  padding: 20px;
-  width: 360px;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.55);
+  background: rgba(25, 10, 40, 0.88);
+  border: 1px solid rgba(200, 160, 255, 0.15);
+  backdrop-filter: blur(6px);
+  padding: 24px;
+  width: 380px;
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.55);
   position: relative;
   animation: fadeIn 0.18s ease-out;
 }
@@ -44,16 +45,17 @@
 }
 
 .fn-profile-title {
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 600;
   margin-bottom: 15px;
-  color: #fff;
+  color: #d9b3ff;
   text-align: center;
 }
 
 .fn-profile-username {
   font-size: 15px;
-  color: #ccc;
-  margin-bottom: 20px;
+  color: #c9a7ff;
+  margin-bottom: 18px;
   text-align: center;
 }
 
@@ -82,17 +84,17 @@
 .fn-profile-btn-primary {
   width: 100%;
   padding: 10px;
-  background: #5b4bce;
-  color: #fff;
+  background: linear-gradient(135deg, #9f72ff, #6f4bcb);
+  color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 15px;
   transition: 0.15s;
 }
 
 .fn-profile-btn-primary:hover {
-  background: #6e5df5;
+  background: linear-gradient(135deg, #b18aff, #7f56e0);
 }
 
 .fn-profile-message {
@@ -102,24 +104,30 @@
 }
 
 .fn-profile-message--ok {
-  color: #44e37a;
+  color: #6cffd1;
 }
 
 .fn-profile-message--error {
-  color: #ff6b6b;
+  color: #ff7b7b;
 }
 
-/* Button im Chat-Header */
+/* Profil-Button oben rechts */
 .fn-profile-open-btn {
-  margin-left: auto;
-  padding: 6px 12px;
-  background: #333;
-  border: 1px solid #555;
-  color: white;
-  border-radius: 6px;
+  margin-left: auto;       /* schiebt Button nach rechts */
+  margin-right: 20px;      /* Abstand zum Rand */
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #a874e4, #7f5bd9);
+  border: none;
+  color: #f8eaff;
+  font-size: 14px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: 0.15s ease-out;
+  box-shadow: 0 0 6px rgba(0,0,0,0.4);
 }
 
 .fn-profile-open-btn:hover {
-  background: #444;
+  background: linear-gradient(135deg, #b789ff, #8c66f0);
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
