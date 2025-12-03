@@ -10,6 +10,7 @@ const auth = require("./auth-server");
 const { emitUserJoined, emitUserLeft } = require("./system-messages-server");
 const { ROOMS, findRoom, getRoomsForClient } = require("./rooms-server");
 
+const { getUserRole } = require("./roles-server");
 // 2-Minuten-Timeout
 const AWAY_TIMEOUT = 1000 * 120;
 
@@ -251,6 +252,7 @@ function getUserList(roomId) {
         username: user.username,
         gender: user.gender,
         away: user.away,
+        role: user.role,
       });
     }
   });
@@ -289,6 +291,7 @@ io.on("connection", (socket) => {
       gender: gender || "",
       away: false,
       currentRoom: "lobby",
+      role: getUserRole(cleanName)
     });
 
     socket.join("lobby");

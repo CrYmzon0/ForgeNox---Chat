@@ -19,8 +19,30 @@ window.addEventListener("DOMContentLoaded", () => {
 // Userliste aktualisieren (Server -> allUsers) + rendern
 // --------------------------------------------------
 socket.on("user-list", (users) => {
-  allUsers = Array.isArray(users) ? users : [];
-  renderUserList();
+    const userList = document.getElementById("userList");
+    userList.innerHTML = "";
+
+    users.forEach((u) => {
+        const li = document.createElement("li");
+        li.classList.add("fn-user-entry");
+
+        // Username links
+        const nameSpan = document.createElement("span");
+        nameSpan.classList.add("fn-user-name");
+        nameSpan.textContent = u.username;
+        li.appendChild(nameSpan);
+
+        // Badge rechts (nur wenn Rolle existiert)
+        if (u.role && u.role !== "USER") {
+            const img = document.createElement("img");
+            img.classList.add("fn-role-badge");
+            img.src = `/BADGES/${u.role} - BADGE.png`;  // exakt nach deinen Dateinamen
+            img.alt = u.role;
+            li.appendChild(img);
+        }
+
+        userList.appendChild(li);
+    });
 });
 
   // Username & Gender (kommen vom Server über /me)
@@ -159,7 +181,20 @@ socket.on("user-list", (users) => {
     usersToRender.forEach((user) => {
       const li = document.createElement("li");
       li.classList.add("fn-userlist-item");
-      li.textContent = user.username;
+      lli.classList.add("fn-user-entry");
+
+const span = document.createElement("span");
+span.classList.add("fn-user-name");
+span.textContent = u.username;
+li.appendChild(span);
+
+if (u.role && u.role !== "USER") {
+    const img = document.createElement("img");
+    img.classList.add("fn-role-badge");
+    img.src = `/BADGES/${u.role} - BADGE.png`;
+    img.alt = u.role;
+    li.appendChild(img);
+}
 
       if (user.away) {
         li.classList.add("fn-user-away");
