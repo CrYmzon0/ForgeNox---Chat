@@ -11,6 +11,11 @@ const ROOMS = [
     type: "public",
   },
   {
+    id: "Themenraum",
+    name: "Themenraum",
+    type: "public",
+  },
+  {
     id: "Stammtisch",
     name: "Stammtisch",
     type: "private",
