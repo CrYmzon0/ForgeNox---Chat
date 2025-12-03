@@ -230,15 +230,30 @@ if (u.role && u.role !== "USER") {
 
     userListEl.innerHTML = "";
     (users || []).forEach((user) => {
-      const li = document.createElement("li");
-      li.classList.add("fn-userlist-item");
-      li.textContent = user.username;
+        const li = document.createElement("li");
+        li.classList.add("fn-userlist-item");
 
-      if (user.away) {
-        li.classList.add("fn-user-away");
-      }
+        // Username links
+        const nameSpan = document.createElement("span");
+        nameSpan.classList.add("fn-user-name");
+        nameSpan.textContent = user.username;
+        li.appendChild(nameSpan);
 
-      userListEl.appendChild(li);
+        // Badge rechts (falls Rolle vorhanden)
+        if (user.role && user.role !== "USER") {
+            const img = document.createElement("img");
+            img.classList.add("fn-role-badge");
+            img.src = `/BADGES/${user.role} - BADGE.png`;
+            img.alt = user.role;
+            li.appendChild(img);
+        }
+
+        // Status "away"
+        if (user.away) {
+            li.classList.add("fn-user-away");
+        }
+
+        userListEl.appendChild(li);
     });
-  });
+});
 });

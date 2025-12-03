@@ -111,13 +111,6 @@
   margin: 2px 0;
 }
 
-.fn-user-entry {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-right: 6px;
-}
-
 .fn-user-name {
     flex-grow: 1;
 }
