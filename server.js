@@ -393,34 +393,37 @@ app.post("/profile-show-password", (req, res) => {
   // DISCONNECT
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
-
-    if (user) {
-      const sessionId = findSessionIdByUsername(user.username);
-      if (sessionId && userStates[sessionId]) {
-        const state = userStates[sessionId];
-        state.away = true;
-        state.lastActive = Date.now();
-
-        state.timeoutHandle = setTimeout(() => {
-          const diff = Date.now() - state.lastActive;
-
-          if (state.away && diff >= AWAY_TIMEOUT) {
-            emitUserLeft(io, user.username);
-
-            delete userStates[sessionId];
-            delete sessions[sessionId];
-          }
-
-          broadcastRoomState(io);
-        }, AWAY_TIMEOUT);
-      }
+    if (!user) {
+      console.log("Unknown user disconnected:", socket.id);
+      return;
     }
 
-    users.delete(socket.id);
-    broadcastRoomState(io);
-    console.log("Client disconnected:", socket.id);
+    const sessionId = findSessionIdByUsername(user.username);
+    const state = sessionId ? userStates[sessionId] : null;
+
+    if (state) {
+      state.away = true;
+      state.lastActive = Date.now();
+
+      state.timeoutHandle = setTimeout(() => {
+        const diff = Date.now() - state.lastActive;
+
+        if (state.away && diff >= AWAY_TIMEOUT) {
+          emitUserLeft(io, user.username);
+
+          delete userStates[sessionId];
+          delete sessions[sessionId];
+          users.delete(socket.id);
+
+          broadcastRoomState(io);
+        }
+      }, AWAY_TIMEOUT);
+    }
+
+    console.log("Client disconnected (away mode):", socket.id);
   });
-});
+});   // <==== DIESER Abschluss für io.on("connection") MUSS DIREKT
+      //       VOR dem "// STATIC" Kommentar stehen
 
 // STATIC
 app.use(express.static(__dirname));
