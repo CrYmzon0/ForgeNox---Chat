@@ -17,7 +17,7 @@ const ROLE_ORDER = [
 // Schreibweise muss exakt so sein, wie der User im Chat heißt
 const USER_ROLES = {
   "MAXX": "ADMIN",
-  "Gooner67": "Admin",
+  "Gooner67": "ADMIN",
 };
 
 // Rolle holen
