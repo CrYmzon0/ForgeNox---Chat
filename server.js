@@ -399,6 +399,7 @@ socket.on("disconnect", () => {
         if (sessionId && userStates[sessionId]) {
             const state = userStates[sessionId];
             state.away = true;
+            user.away = true;
             state.lastActive = Date.now();
 
             state.timeoutHandle = setTimeout(() => {
