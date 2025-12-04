@@ -16,7 +16,7 @@ const ROLE_ORDER = [
 // MAP: username → Rolle
 // Schreibweise muss exakt so sein, wie der User im Chat heißt
 const USER_ROLES = {
-  "CRIMSON": "INHABER",
+  "MAXX": "ADMIN",
 };
 
 // Rolle holen
