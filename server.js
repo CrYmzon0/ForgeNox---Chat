@@ -270,18 +270,23 @@ function getUserList(roomId) {
 // --------------------------------------------------
 function broadcastRoomState(io) {
     const counts = {};
-    users.forEach((user) => {
+
+    users.forEach(user => {
         const roomId = user.currentRoom || "lobby";
         counts[roomId] = (counts[roomId] || 0) + 1;
     });
 
-    // 1. Erst Raumliste senden
+    // 1. Raumliste global senden
     io.emit("room-list", getRoomsForClient(counts));
 
-    // 2. Dann globale Userliste (alle User, egal welcher Raum)
-    io.emit("user-list", getUserList(null));
-}
+    // 2. Für jeden Raum die RAUM-LISTE senden
+    ROOMS.forEach(room => {
+        io.to(room.id).emit("room-user-list", getUserList(room.id));
+    });
 
+    // 3. Globale User-Liste (alle User, egal wo) separat
+    io.emit("global-user-list", getUserList(null));
+}
 // --------------------------------------------------
 // SOCKET.IO
 // --------------------------------------------------

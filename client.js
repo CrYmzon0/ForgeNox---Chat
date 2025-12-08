@@ -109,51 +109,49 @@ window.addEventListener("DOMContentLoaded", () => {
   // USERLISTE + SUCHE + BADGES + AWAY
   // --------------------------------------------------
 
+  // WICHTIG:
+  // user-list bedeutet jetzt wieder: "ALLE User global"
   socket.on("user-list", (users) => {
     allUsers = users;
     updateUserCounter();
-    renderUserList(users);
+    renderUserList(allUsers);
   });
 
   function renderUserList(users) {
-  if (!userListEl) return;
+    if (!userListEl) return;
 
-  userListEl.innerHTML = "";
+    userListEl.innerHTML = "";
 
-  users.forEach((u) => {
-    const li = document.createElement("li");
-    li.classList.add("fn-userlist-item");
+    users.forEach((u) => {
+      const li = document.createElement("li");
+      li.classList.add("fn-userlist-item");
 
-    if (u.away) {
-      li.classList.add("fn-user-away");
-    }
+      if (u.away) {
+        li.classList.add("fn-user-away");
+      }
 
-    // Name
-    const nameSpan = document.createElement("span");
-    nameSpan.classList.add("fn-user-name");
-    nameSpan.textContent = u.username;
-    li.appendChild(nameSpan);
+      // Name
+      const nameSpan = document.createElement("span");
+      nameSpan.classList.add("fn-user-name");
+      nameSpan.textContent = u.username;
+      li.appendChild(nameSpan);
 
-    // Rollen-Badge
-    if (u.role && u.role !== "USER") {
-      const img = document.createElement("img");
-      img.classList.add("fn-role-badge");
-      img.src = `/BADGES/${u.role} - BADGE.png`;
-      img.alt = u.role;
-      li.appendChild(img);
-    }
+      // Rollen-Badge
+      if (u.role && u.role !== "USER") {
+        const img = document.createElement("img");
+        img.classList.add("fn-role-badge");
+        img.src = `/BADGES/${u.role} - BADGE.png`;
+        img.alt = u.role;
+        li.appendChild(img);
+      }
 
-    // Raumname anhängen, z.B. "Lobby" oder "Teamzone"
-    if (u.roomName) {
-      const roomSpan = document.createElement("span");
-      roomSpan.classList.add("fn-user-room");
-      roomSpan.textContent = ` (${u.roomName})`;
-      li.appendChild(roomSpan);
-    }
+      // WICHTIG:
+      // Du wolltest den Raum NICHT anzeigen
+      // Also NICHTS anhängen.
 
-    userListEl.appendChild(li);
-  });
-}
+      userListEl.appendChild(li);
+    });
+  }
 
   // Suche
   userSearchEl.addEventListener("input", () => {
