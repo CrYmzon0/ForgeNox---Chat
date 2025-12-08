@@ -116,37 +116,44 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   function renderUserList(users) {
-    if (!userListEl) return;
+  if (!userListEl) return;
 
-    userListEl.innerHTML = "";
+  userListEl.innerHTML = "";
 
-    users.forEach((u) => {
-      const li = document.createElement("li");
-      li.classList.add("fn-userlist-item");
+  users.forEach((u) => {
+    const li = document.createElement("li");
+    li.classList.add("fn-userlist-item");
 
-      // Away
-      if (u.away) {
-        li.classList.add("fn-user-away");
-      }
+    if (u.away) {
+      li.classList.add("fn-user-away");
+    }
 
-      // Name
-      const span = document.createElement("span");
-      span.classList.add("fn-user-name");
-      span.textContent = u.username;
-      li.appendChild(span);
+    // Name
+    const nameSpan = document.createElement("span");
+    nameSpan.classList.add("fn-user-name");
+    nameSpan.textContent = u.username;
+    li.appendChild(nameSpan);
 
-      // Badge
-      if (u.role && u.role !== "USER") {
-        const img = document.createElement("img");
-        img.classList.add("fn-role-badge");
-        img.src = `/BADGES/${u.role} - BADGE.png`;
-        img.alt = u.role;
-        li.appendChild(img);
-      }
+    // Rollen-Badge
+    if (u.role && u.role !== "USER") {
+      const img = document.createElement("img");
+      img.classList.add("fn-role-badge");
+      img.src = `/BADGES/${u.role} - BADGE.png`;
+      img.alt = u.role;
+      li.appendChild(img);
+    }
 
-      userListEl.appendChild(li);
-    });
-  }
+    // Raumname anhängen, z.B. "Lobby" oder "Teamzone"
+    if (u.roomName) {
+      const roomSpan = document.createElement("span");
+      roomSpan.classList.add("fn-user-room");
+      roomSpan.textContent = ` (${u.roomName})`;
+      li.appendChild(roomSpan);
+    }
+
+    userListEl.appendChild(li);
+  });
+}
 
   // Suche
   userSearchEl.addEventListener("input", () => {

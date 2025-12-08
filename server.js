@@ -247,12 +247,18 @@ app.post("/register-username", (req, res) => {
 function getUserList(roomId) {
   const list = [];
   users.forEach((user) => {
-    if (!roomId || user.currentRoom === roomId) {
+    const userRoomId = user.currentRoom || "lobby";
+
+    if (!roomId || userRoomId === roomId) {
+      const roomObj = findRoom(userRoomId);
+
       list.push({
         username: user.username,
         gender: user.gender,
         away: user.away,
         role: user.role,
+        roomId: userRoomId,
+        roomName: roomObj ? roomObj.name : userRoomId,
       });
     }
   });
