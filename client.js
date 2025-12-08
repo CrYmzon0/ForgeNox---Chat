@@ -118,17 +118,34 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   function renderUserList(users) {
-    if (!userListEl) return;
+  if (!userListEl) return;
 
-    userListEl.innerHTML = "";
+  userListEl.innerHTML = "";
 
-    users.forEach((u) => {
+  // 1. User nach Raum gruppieren
+  const byRoom = {};
+  users.forEach(u => {
+    if (!byRoom[u.room]) byRoom[u.room] = [];
+    byRoom[u.room].push(u);
+  });
+
+  // 2. Räume in fixer Reihenfolge sortieren (optional)
+  const sortedRooms = Object.keys(byRoom).sort();
+
+  // 3. Darstellung
+  sortedRooms.forEach(room => {
+    // Raumüberschrift:
+    const roomHeader = document.createElement("div");
+    roomHeader.classList.add("fn-userlist-room-title");
+    roomHeader.textContent = room;
+    userListEl.appendChild(roomHeader);
+
+    // User im Raum:
+    byRoom[room].forEach(u => {
       const li = document.createElement("li");
       li.classList.add("fn-userlist-item");
 
-      if (u.away) {
-        li.classList.add("fn-user-away");
-      }
+      if (u.away) li.classList.add("fn-user-away");
 
       // Name
       const nameSpan = document.createElement("span");
@@ -136,23 +153,18 @@ window.addEventListener("DOMContentLoaded", () => {
       nameSpan.textContent = u.username;
       li.appendChild(nameSpan);
 
-      // Rollen-Badge
+      // Badge
       if (u.role && u.role !== "USER") {
         const img = document.createElement("img");
         img.classList.add("fn-role-badge");
         img.src = `/BADGES/${u.role} - BADGE.png`;
-        img.alt = u.role;
         li.appendChild(img);
       }
 
-      // WICHTIG:
-      // Du wolltest den Raum NICHT anzeigen
-      // Also NICHTS anhängen.
-
       userListEl.appendChild(li);
     });
-  }
-
+  });
+}
   // Suche
   userSearchEl.addEventListener("input", () => {
     const term = userSearchEl.value.toLowerCase();

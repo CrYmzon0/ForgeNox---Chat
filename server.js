@@ -246,19 +246,16 @@ app.post("/register-username", (req, res) => {
 // roomId = null  -> alle User
 // roomId = "lobby" / "teamzone" etc. -> nur diese User
 // --------------------------------------------------
-function getUserList(roomId) {
+function getUserList() {
   const list = [];
-  users.forEach((user) => {
-    const currentRoomId = user.currentRoom || "lobby";
-
-    if (!roomId || currentRoomId === roomId) {
-      list.push({
-        username: user.username,
-        gender: user.gender,
-        away: user.away,
-        role: user.role,
-      });
-    }
+  users.forEach((u) => {
+    list.push({
+      username: u.username,
+      gender: u.gender,
+      away: u.away,
+      role: u.role,
+      room: u.currentRoom   // <-- HIER: Raum hinzugefügt!
+    });
   });
   return list;
 }
@@ -274,13 +271,11 @@ function broadcastRoomState(io) {
     counts[roomId] = (counts[roomId] || 0) + 1;
   });
 
-  // 1. Raumübersicht (mit Countern) an alle
+  // 1. Raumliste (Zähler pro Raum) an alle
   io.emit("room-list", getRoomsForClient(counts));
 
-  // 2. Für jeden Raum die passende Userliste nur an die Clients in diesem Raum
-  ROOMS.forEach((room) => {
-    io.to(room.id).emit("user-list", getUserList(room.id));
-  });
+  // 2. Globale Userliste (ALLE User, ohne Filter)
+  io.emit("user-list", getUserList());
 }
 
 // --------------------------------------------------
