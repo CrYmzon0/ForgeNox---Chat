@@ -353,8 +353,15 @@ app.post("/profile-show-password", (req, res) => {
     if (!room) return socket.emit("join-room-error", { message: "Raum existiert nicht." });
 
     if (room.type === "locked") {
-      return socket.emit("join-room-error", { message: "Dieser Raum ist verschlossen." });
+    const role = user.role || "USER";
+
+    const TEAM = ["INHABER", "ADMIN", "TEAMLEITER", "MOD", "JUNIOR MOD"];
+
+    // Team-Mitglieder dürfen locked Räume betreten
+    if (!TEAM.includes(role)) {
+        return socket.emit("join-room-error", { message: "Dieser Raum ist verschlossen." });
     }
+}
 
     if (room.type === "private") {
       if (!room.password || room.password !== password) {

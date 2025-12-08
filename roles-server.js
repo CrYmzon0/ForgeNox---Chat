@@ -9,7 +9,7 @@ const ROLE_ORDER = [
   "ADMIN",
   "TEAMLEITER",
   "MOD",
-  "JUNIORMOD",
+  "JUNIOR-MOD",
   "USER" // Standard
 ];
 
