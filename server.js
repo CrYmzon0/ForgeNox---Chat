@@ -269,12 +269,8 @@ function broadcastRoomState(io) {
     counts[roomId] = (counts[roomId] || 0) + 1;
   });
 
+  io.emit("user-list", getUserList(null));
     io.emit("room-list", getRoomsForClient(counts));
-
-  // jetzt wieder pro Raum die passende Userliste senden
-  ROOMS.forEach((room) => {
-    io.to(room.id).emit("user-list", getUserList(room.id));
-  });
 }
 
 // --------------------------------------------------
