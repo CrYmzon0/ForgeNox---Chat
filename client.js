@@ -15,40 +15,9 @@ window.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".fn-chat-input button");
   const userListEl = document.getElementById("userList");
   const userSearchEl = document.getElementById("userSearch");
-  // --------------------------------------------------
-// Userliste aktualisieren (Server -> allUsers) + rendern
-// --------------------------------------------------
-socket.on("user-list", (users) => {
-    const userList = document.getElementById("userList");
-    userList.innerHTML = "";
 
-    users.forEach((u) => {
-        const li = document.createElement("li");
-        li.classList.add("fn-user-entry");
-
-        // Username links
-        const nameSpan = document.createElement("span");
-        nameSpan.classList.add("fn-user-name");
-        nameSpan.textContent = u.username;
-        li.appendChild(nameSpan);
-
-        // Badge rechts (nur wenn Rolle existiert)
-        if (u.role && u.role !== "USER") {
-            const img = document.createElement("img");
-            img.classList.add("fn-role-badge");
-            img.src = `/BADGES/${u.role} - BADGE.png`;  // exakt nach deinen Dateinamen
-            img.alt = u.role;
-            li.appendChild(img);
-        }
-
-        userList.appendChild(li);
-    });
-});
-
-  // Username & Gender (kommen vom Server über /me)
   let username = "";
   let gender = "";
-  // Merkt sich immer die aktuelle komplette Userliste
   let allUsers = [];
 
   // --------------------------------------------------
@@ -58,8 +27,7 @@ socket.on("user-list", (users) => {
     if (!messagesEl) return;
 
     const wrapper = document.createElement("div");
-    wrapper.classList.add("fn-msg");
-    wrapper.classList.add(fromSelf ? "fn-msg-me" : "fn-msg-other");
+    wrapper.classList.add("fn-msg", fromSelf ? "fn-msg-me" : "fn-msg-other");
 
     const meta = document.createElement("div");
     meta.classList.add("fn-msg-meta");
@@ -93,16 +61,13 @@ socket.on("user-list", (users) => {
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // eigene Nachricht sofort anzeigen
     addMessage({ text, fromSelf: true, userName: username });
 
-    // an Server schicken
     socket.emit("chat-message", { text });
 
     inputEl.value = "";
   }
 
-  // Klick auf "Senden"
   if (sendBtn) {
     sendBtn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -110,7 +75,6 @@ socket.on("user-list", (users) => {
     });
   }
 
-  // Enter zum Senden
   if (inputEl) {
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -121,7 +85,7 @@ socket.on("user-list", (users) => {
   }
 
   // --------------------------------------------------
-  // Username & Gender sicher vom Server holen
+  // Login-Infos holen
   // --------------------------------------------------
   fetch("/me")
     .then((res) => res.json())
@@ -133,10 +97,8 @@ socket.on("user-list", (users) => {
 
       username = data.username || "Gast";
       gender = data.gender || "";
-
       window.currentUsername = username;
 
-      // Registrierung erst NACH Login-Daten
       socket.emit("register-user", {
         username,
         gender,
@@ -144,75 +106,70 @@ socket.on("user-list", (users) => {
     });
 
   // --------------------------------------------------
-  // Userliste rendern (inkl. Suchfilter)
+  // USERLISTE + SUCHE + BADGES + AWAY
   // --------------------------------------------------
-  function renderUserList() {
+
+  socket.on("user-list", (users) => {
+    allUsers = users;
+    updateUserCounter();
+    renderUserList(users);
+  });
+
+  function renderUserList(users) {
     if (!userListEl) return;
 
-    const term =
-      (userSearchEl && userSearchEl.value ? userSearchEl.value : "")
-        .trim()
-        .toLowerCase();
-
-    const usersToRender = [];
-    const source = Array.isArray(allUsers) ? allUsers : [];
-
-    if (!term) {
-      // Keine Suche: Reihenfolge wie vom Server
-      source.forEach((u) => usersToRender.push(u));
-    } else {
-      const matches = [];
-      const rest = [];
-
-      source.forEach((u) => {
-        const name = (u.username || "").toLowerCase();
-        if (name.includes(term)) {
-          matches.push(u);
-        } else {
-          rest.push(u);
-        }
-      });
-
-      // erst passende User, dann der Rest, jeweils in Originalreihenfolge
-      usersToRender.push(...matches, ...rest);
-    }
-
     userListEl.innerHTML = "";
-    usersToRender.forEach((user) => {
+
+    users.forEach((u) => {
       const li = document.createElement("li");
       li.classList.add("fn-userlist-item");
-      lli.classList.add("fn-user-entry");
 
-const span = document.createElement("span");
-span.classList.add("fn-user-name");
-span.textContent = u.username;
-li.appendChild(span);
-
-if (u.role && u.role !== "USER") {
-    const img = document.createElement("img");
-    img.classList.add("fn-role-badge");
-    img.src = `/BADGES/${u.role} - BADGE.png`;
-    img.alt = u.role;
-    li.appendChild(img);
-}
-
-      if (user.away) {
+      // Away
+      if (u.away) {
         li.classList.add("fn-user-away");
+      }
+
+      // Name
+      const span = document.createElement("span");
+      span.classList.add("fn-user-name");
+      span.textContent = u.username;
+      li.appendChild(span);
+
+      // Badge
+      if (u.role && u.role !== "USER") {
+        const img = document.createElement("img");
+        img.classList.add("fn-role-badge");
+        img.src = `/BADGES/${u.role} - BADGE.png`;
+        img.alt = u.role;
+        li.appendChild(img);
       }
 
       userListEl.appendChild(li);
     });
   }
 
-  // Suche neu rendern, sobald der User tippt
-  if (userSearchEl) {
-    userSearchEl.addEventListener("input", () => {
-      renderUserList();
-    });
+  // Suche
+  userSearchEl.addEventListener("input", () => {
+    const term = userSearchEl.value.toLowerCase();
+
+    if (!term) {
+      renderUserList(allUsers);
+      return;
+    }
+
+    const filtered = allUsers.filter((u) =>
+      u.username.toLowerCase().includes(term)
+    );
+
+    renderUserList(filtered);
+  });
+
+  function updateUserCounter() {
+    userSearchEl.placeholder = `User suchen (${allUsers.length} online)`;
   }
 
   // --------------------------------------------------
-  // Nachrichten von anderen empfangen
+  // Chatnachrichten anderer User empfangen
   // --------------------------------------------------
   socket.on("chat-message", (data) => {
     addMessage({
@@ -222,38 +179,4 @@ if (u.role && u.role !== "USER") {
     });
   });
 
-  // --------------------------------------------------
-  // Userliste aktualisieren (ohne Suche / ohne Counter)
-  // --------------------------------------------------
-  socket.on("user-list", (users) => {
-    if (!userListEl) return;
-
-    userListEl.innerHTML = "";
-    (users || []).forEach((user) => {
-        const li = document.createElement("li");
-        li.classList.add("fn-userlist-item");
-
-        // Username links
-        const nameSpan = document.createElement("span");
-        nameSpan.classList.add("fn-user-name");
-        nameSpan.textContent = user.username;
-        li.appendChild(nameSpan);
-
-        // Badge rechts (falls Rolle vorhanden)
-        if (user.role && user.role !== "USER") {
-            const img = document.createElement("img");
-            img.classList.add("fn-role-badge");
-            img.src = `/BADGES/${user.role} - BADGE.png`;
-            img.alt = user.role;
-            li.appendChild(img);
-        }
-
-        // Status "away"
-        if (user.away) {
-            li.classList.add("fn-user-away");
-        }
-
-        userListEl.appendChild(li);
-    });
-});
 });

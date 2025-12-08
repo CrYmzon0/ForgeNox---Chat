@@ -269,11 +269,11 @@ function broadcastRoomState(io) {
     counts[roomId] = (counts[roomId] || 0) + 1;
   });
 
+  // Raumliste aktualisieren
   io.emit("room-list", getRoomsForClient(counts));
 
-  ROOMS.forEach((room) => {
-    io.to(room.id).emit("user-list", getUserList(room.id));
-  });
+  // ALLE Userliste an ALLE Clients
+  io.emit("user-list", getUserList(null));
 }
 
 // --------------------------------------------------
