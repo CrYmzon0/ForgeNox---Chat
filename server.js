@@ -263,14 +263,17 @@ function getUserList(roomId) {
 // Raum-Infos + Userlisten
 // --------------------------------------------------
 function broadcastRoomState(io) {
-  const counts = {};
-  users.forEach((user) => {
-    const roomId = user.currentRoom || "lobby";
-    counts[roomId] = (counts[roomId] || 0) + 1;
-  });
+    const counts = {};
+    users.forEach((user) => {
+        const roomId = user.currentRoom || "lobby";
+        counts[roomId] = (counts[roomId] || 0) + 1;
+    });
 
-  io.emit("user-list", getUserList(null));
+    // 1. Erst Raumliste senden
     io.emit("room-list", getRoomsForClient(counts));
+
+    // 2. Dann globale Userliste (alle User, egal welcher Raum)
+    io.emit("user-list", getUserList(null));
 }
 
 // --------------------------------------------------
