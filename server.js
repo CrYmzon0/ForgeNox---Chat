@@ -242,25 +242,17 @@ app.post("/register-username", (req, res) => {
 });
 
 // --------------------------------------------------
-// Userliste basierend auf Raum
+// Userliste (GLOBAL – alle User, egal welcher Raum)
 // --------------------------------------------------
-function getUserList(roomId) {
+function getUserList() {
   const list = [];
   users.forEach((user) => {
-    const userRoomId = user.currentRoom || "lobby";
-
-    if (!roomId || userRoomId === roomId) {
-      const roomObj = findRoom(userRoomId);
-
-      list.push({
-        username: user.username,
-        gender: user.gender,
-        away: user.away,
-        role: user.role,
-        roomId: userRoomId,
-        roomName: roomObj ? roomObj.name : userRoomId,
-      });
-    }
+    list.push({
+      username: user.username,
+      gender: user.gender,
+      away: user.away,
+      role: user.role,
+    });
   });
   return list;
 }
@@ -269,24 +261,21 @@ function getUserList(roomId) {
 // Raum-Infos + Userlisten
 // --------------------------------------------------
 function broadcastRoomState(io) {
-    const counts = {};
+  const counts = {};
 
-    users.forEach(user => {
-        const roomId = user.currentRoom || "lobby";
-        counts[roomId] = (counts[roomId] || 0) + 1;
-    });
+  // Raum-Zähler aufbauen
+  users.forEach((user) => {
+    const roomId = user.currentRoom || "lobby";
+    counts[roomId] = (counts[roomId] || 0) + 1;
+  });
 
-    // 1. Raumliste global senden
-    io.emit("room-list", getRoomsForClient(counts));
+  // 1. Raumübersicht an alle Clients
+  io.emit("room-list", getRoomsForClient(counts));
 
-    // 2. Für jeden Raum die RAUM-LISTE senden
-    ROOMS.forEach(room => {
-        io.to(room.id).emit("room-user-list", getUserList(room.id));
-    });
-
-    // 3. Globale User-Liste (alle User, egal wo) separat
-    io.emit("global-user-list", getUserList(null));
+  // 2. Globale Userliste an alle Clients
+  io.emit("user-list", getUserList());
 }
+
 // --------------------------------------------------
 // SOCKET.IO
 // --------------------------------------------------
