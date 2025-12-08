@@ -390,36 +390,40 @@ app.post("/profile-show-password", (req, res) => {
     });
   });
 
-  // DISCONNECT
-socket.on("disconnect", () => {
+    // DISCONNECT
+  socket.on("disconnect", () => {
     const user = users.get(socket.id);
 
     if (user) {
-        const sessionId = findSessionIdByUsername(user.username);
-        if (sessionId && userStates[sessionId]) {
-            const state = userStates[sessionId];
-            state.away = true;
-            user.away = true;
-            state.lastActive = Date.now();
+      const sessionId = findSessionIdByUsername(user.username);
+      if (sessionId && userStates[sessionId]) {
+        const state = userStates[sessionId];
+        state.away = true;
+        user.away = true;
+        state.lastActive = Date.now();
 
-            state.timeoutHandle = setTimeout(() => {
-                const diff = Date.now() - state.lastActive;
+        // NEU: Away-Status sofort an alle Clients senden
+        broadcastRoomState(io);
 
-                if (state.away && diff >= AWAY_TIMEOUT) {
-                    emitUserLeft(io, user.username);
+        state.timeoutHandle = setTimeout(() => {
+          const diff = Date.now() - state.lastActive;
 
-                    delete userStates[sessionId];
-                    delete sessions[sessionId];
-                    users.delete(socket.id);
-                }
+          if (state.away && diff >= AWAY_TIMEOUT) {
+            emitUserLeft(io, user.username);
 
-                broadcastRoomState(io);
-            }, AWAY_TIMEOUT);
-        }
+            delete userStates[sessionId];
+            delete sessions[sessionId];
+            users.delete(socket.id);
+
+            // nach endgültigem Entfernen nochmal Liste aktualisieren
+            broadcastRoomState(io);
+          }
+        }, AWAY_TIMEOUT);
+      }
     }
 
     console.log("Client disconnected:", socket.id);
-});
+  });
 });
 
 // STATIC
