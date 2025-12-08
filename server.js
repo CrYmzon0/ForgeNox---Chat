@@ -242,17 +242,23 @@ app.post("/register-username", (req, res) => {
 });
 
 // --------------------------------------------------
-// Userliste (GLOBAL – alle User, egal welcher Raum)
+// Userliste nach Raum
+// roomId = null  -> alle User
+// roomId = "lobby" / "teamzone" etc. -> nur diese User
 // --------------------------------------------------
-function getUserList() {
+function getUserList(roomId) {
   const list = [];
   users.forEach((user) => {
-    list.push({
-      username: user.username,
-      gender: user.gender,
-      away: user.away,
-      role: user.role,
-    });
+    const currentRoomId = user.currentRoom || "lobby";
+
+    if (!roomId || currentRoomId === roomId) {
+      list.push({
+        username: user.username,
+        gender: user.gender,
+        away: user.away,
+        role: user.role,
+      });
+    }
   });
   return list;
 }
@@ -263,17 +269,18 @@ function getUserList() {
 function broadcastRoomState(io) {
   const counts = {};
 
-  // Raum-Zähler aufbauen
   users.forEach((user) => {
     const roomId = user.currentRoom || "lobby";
     counts[roomId] = (counts[roomId] || 0) + 1;
   });
 
-  // 1. Raumübersicht an alle Clients
+  // 1. Raumübersicht (mit Countern) an alle
   io.emit("room-list", getRoomsForClient(counts));
 
-  // 2. Globale Userliste an alle Clients
-  io.emit("user-list", getUserList());
+  // 2. Für jeden Raum die passende Userliste nur an die Clients in diesem Raum
+  ROOMS.forEach((room) => {
+    io.to(room.id).emit("user-list", getUserList(room.id));
+  });
 }
 
 // --------------------------------------------------
