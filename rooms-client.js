@@ -77,8 +77,9 @@
     });
 
     socket.on("room-changed", ({ roomId }) => {
-      currentRoomId = roomId;
-      renderRooms();
+  currentRoomId = roomId;
+  window.currentRoomId = roomId;   // ← NEU UND WICHTIG
+  renderRooms();
 
       if (roomTitleEl) {
         const room = rooms.find((r) => r.id === roomId);

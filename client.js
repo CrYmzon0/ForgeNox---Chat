@@ -120,9 +120,16 @@ window.addEventListener("DOMContentLoaded", () => {
   function renderUserList(users) {
   if (!userListEl) return;
 
+  // --- NEU: aktiven Raum bestimmen
+  const currentRoom = window.currentRoomId || "lobby";
+
+  // --- NEU: nur User dieses aktiven Raums anzeigen
+  const roomUsers = users.filter(u => u.room === currentRoom);
+
   userListEl.innerHTML = "";
 
-  users.forEach(u => {
+  // --- AB HIER unverändert, aber mit roomUsers statt users
+  roomUsers.forEach(u => {
     const li = document.createElement("li");
     li.classList.add("fn-userlist-item");
 
@@ -145,7 +152,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     userListEl.appendChild(li);
   }); 
-  
+
 }// Suche
   userSearchEl.addEventListener("input", () => {
     const term = userSearchEl.value.toLowerCase();
