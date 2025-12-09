@@ -244,18 +244,22 @@ app.post("/register-username", (req, res) => {
 // --------------------------------------------------
 // Userliste nach Raum
 // roomId = null  -> alle User
-// roomId = "lobby" / "teamzone" etc. -> nur diese User
+// roomId = "lobby" / "staff" etc. -> nur diese User
 // --------------------------------------------------
-function getUserList() {
+function getUserList(roomId) {
   const list = [];
   users.forEach((u) => {
-    list.push({
-      username: u.username,
-      gender: u.gender,
-      away: u.away,
-      role: u.role,
-      room: u.currentRoom   // <-- HIER: Raum hinzugefügt!
-    });
+    const currentRoomId = u.currentRoom || "lobby";
+
+    if (!roomId || currentRoomId === roomId) {
+      list.push({
+        username: u.username,
+        gender: u.gender,
+        away: u.away,
+        role: u.role,
+        room: currentRoomId,
+      });
+    }
   });
   return list;
 }
@@ -274,8 +278,10 @@ function broadcastRoomState(io) {
   // 1. Raumliste (Zähler pro Raum) an alle
   io.emit("room-list", getRoomsForClient(counts));
 
-  // 2. Globale Userliste (ALLE User, ohne Filter)
-  io.emit("user-list", getUserList());
+  // 2. Für jeden Raum die passende Userliste nur an diese Clients
+  ROOMS.forEach((room) => {
+    io.to(room.id).emit("user-list", getUserList(room.id));
+  });
 }
 
 // --------------------------------------------------
@@ -289,12 +295,12 @@ io.on("connection", (socket) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
     users.set(socket.id, {
-      username: cleanName,
-      gender: gender || "",
-      away: false,
-      currentRoom: "Lobby",
-      role: getUserRole(cleanName)
-    });
+  username: cleanName,
+  gender: gender || "",
+  away: false,
+  currentRoom: "Lobby",
+  role: getUserRole(cleanName)
+});
 
     socket.join("Lobby");
     const sid = findSessionIdByUsername(cleanName);
