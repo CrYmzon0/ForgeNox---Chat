@@ -15,19 +15,6 @@
     let currentRoomId = "lobby";
 
     // --------------------------------------------------
-    // Userliste unter die aktive Raumkarte hängen
-    // --------------------------------------------------
-    function attachUserListToActiveRoom() {
-      const activeLi = roomListEl.querySelector(
-        '.fn-room.fn-room--active[data-room-id="' + currentRoomId + '"]'
-      );
-      if (!activeLi) return;
-
-      // sicherstellen, dass die Liste am Ende der Karte hängt
-      activeLi.appendChild(userListEl);
-    }
-
-    // --------------------------------------------------
     // Räume rendern
     // --------------------------------------------------
     function renderRooms() {
@@ -62,9 +49,6 @@
 
         roomListEl.appendChild(li);
       });
-
-      // Userliste unter den aktiven Raum ziehen
-      attachUserListToActiveRoom();
     }
 
     // --------------------------------------------------
