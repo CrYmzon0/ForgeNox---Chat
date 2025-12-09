@@ -246,20 +246,16 @@ app.post("/register-username", (req, res) => {
 // roomId = null  -> alle User
 // roomId = "lobby" / "staff" etc. -> nur diese User
 // --------------------------------------------------
-function getUserList(roomId) {
+function getUserList() {
   const list = [];
   users.forEach((u) => {
-    const currentRoomId = u.currentRoom || "lobby";
-
-    if (!roomId || currentRoomId === roomId) {
-      list.push({
-        username: u.username,
-        gender: u.gender,
-        away: u.away,
-        role: u.role,
-        room: currentRoomId,
-      });
-    }
+    list.push({
+      username: u.username,
+      gender: u.gender,
+      away: u.away,
+      role: u.role,
+      room: u.currentRoom   // wichtig!
+    });
   });
   return list;
 }
