@@ -55,8 +55,8 @@
     // Socket-Events
     // --------------------------------------------------
 
-    socket.on("room-list", (serverRooms) => {
-  rooms = Array.isArray(serverRooms) ? serverRooms : [];
+    socket.on("room-list", (roomsFromServer) => {
+  rooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
   renderRooms();
 });
 
