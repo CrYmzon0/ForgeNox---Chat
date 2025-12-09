@@ -292,12 +292,11 @@ io.on("connection", (socket) => {
       username: cleanName,
       gender: gender || "",
       away: false,
-      currentRoom: "lobby",
+      currentRoom: "Lobby",
       role: getUserRole(cleanName)
     });
 
-    socket.join("lobby");
-
+    socket.join("Lobby");
     const sid = findSessionIdByUsername(cleanName);
     if (sid && userStates[sid]) {
       const state = userStates[sid];
@@ -401,38 +400,37 @@ app.post("/profile-show-password", (req, res) => {
 
     // DISCONNECT
   socket.on("disconnect", () => {
-    const user = users.get(socket.id);
+  const user = users.get(socket.id);
 
-    if (user) {
-      const sessionId = findSessionIdByUsername(user.username);
-      if (sessionId && userStates[sessionId]) {
-        const state = userStates[sessionId];
-        state.away = true;
-        user.away = true;
-        state.lastActive = Date.now();
+  if (!user) return;
 
-        // NEU: Away-Status sofort an alle Clients senden
-        broadcastRoomState(io);
+  const sessionId = findSessionIdByUsername(user.username);
 
-        state.timeoutHandle = setTimeout(() => {
-          const diff = Date.now() - state.lastActive;
+  if (sessionId && userStates[sessionId]) {
+    const state = userStates[sessionId];
 
-          if (state.away && diff >= AWAY_TIMEOUT) {
-            emitUserLeft(io, user.username);
+    state.away = true;
+    state.lastActive = Date.now();
 
-            delete userStates[sessionId];
-            delete sessions[sessionId];
-            users.delete(socket.id);
+    state.timeoutHandle = setTimeout(() => {
+      const diff = Date.now() - state.lastActive;
 
-            // nach endgültigem Entfernen nochmal Liste aktualisieren
-            broadcastRoomState(io);
-          }
-        }, AWAY_TIMEOUT);
+      if (state.away && diff >= AWAY_TIMEOUT) {
+        emitUserLeft(io, user.username);
+
+        delete userStates[sessionId];
+        delete sessions[sessionId];
+
+        // << HIER und NUR HIER löschen
+        users.delete(socket.id);
       }
-    }
 
-    console.log("Client disconnected:", socket.id);
-  });
+      broadcastRoomState(io);
+    }, AWAY_TIMEOUT);
+  }
+
+  broadcastRoomState(io);
+});
 });
 
 // STATIC

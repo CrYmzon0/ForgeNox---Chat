@@ -122,50 +122,31 @@ window.addEventListener("DOMContentLoaded", () => {
 
   userListEl.innerHTML = "";
 
-  // 1. User nach Raum gruppieren
-  const byRoom = {};
   users.forEach(u => {
-    if (!byRoom[u.room]) byRoom[u.room] = [];
-    byRoom[u.room].push(u);
-  });
+    const li = document.createElement("li");
+    li.classList.add("fn-userlist-item");
 
-  // 2. Räume in fixer Reihenfolge sortieren (optional)
-  const sortedRooms = Object.keys(byRoom).sort();
+    if (u.away) {
+      li.classList.add("fn-user-away");
+    }
 
-  // 3. Darstellung
-  sortedRooms.forEach(room => {
-    // Raumüberschrift:
-    const roomHeader = document.createElement("div");
-    roomHeader.classList.add("fn-userlist-room-title");
-    roomHeader.textContent = room;
-    userListEl.appendChild(roomHeader);
+    const nameSpan = document.createElement("span");
+    nameSpan.classList.add("fn-user-name");
+    nameSpan.textContent = u.username;
+    li.appendChild(nameSpan);
 
-    // User im Raum:
-    byRoom[room].forEach(u => {
-      const li = document.createElement("li");
-      li.classList.add("fn-userlist-item");
+    if (u.role && u.role !== "USER") {
+      const img = document.createElement("img");
+      img.classList.add("fn-role-badge");
+      img.src = `/BADGES/${u.role} - BADGE.png`;
+      img.alt = u.role;
+      li.appendChild(img);
+    }
 
-      if (u.away) li.classList.add("fn-user-away");
-
-      // Name
-      const nameSpan = document.createElement("span");
-      nameSpan.classList.add("fn-user-name");
-      nameSpan.textContent = u.username;
-      li.appendChild(nameSpan);
-
-      // Badge
-      if (u.role && u.role !== "USER") {
-        const img = document.createElement("img");
-        img.classList.add("fn-role-badge");
-        img.src = `/BADGES/${u.role} - BADGE.png`;
-        li.appendChild(img);
-      }
-
-      userListEl.appendChild(li);
-    });
-  });
-}
-  // Suche
+    userListEl.appendChild(li);
+  }); 
+  
+}// Suche
   userSearchEl.addEventListener("input", () => {
     const term = userSearchEl.value.toLowerCase();
 
