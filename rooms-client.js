@@ -71,11 +71,13 @@
           roomTitleEl.textContent = room.name;
         }
       }
+      window.allRooms = serverRooms;
     });
 
     socket.on("join-room-error", (data) => {
       if (!data || !data.message) return;
       alert(data.message);
+      
     });
 
     // --------------------------------------------------

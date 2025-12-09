@@ -19,6 +19,7 @@ window.addEventListener("DOMContentLoaded", () => {
   let username = "";
   let gender = "";
   let allUsers = [];
+  let allRooms = [];
 
   // --------------------------------------------------
   // Nachricht im Chat anzeigen
@@ -118,42 +119,52 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   function renderUserList(users) {
-  if (!userListEl) return;
-
-  // --- NEU: aktiven Raum bestimmen
-  const currentRoom = window.currentRoomId || "lobby";
-
-  // --- NEU: nur User dieses aktiven Raums anzeigen
-  const roomUsers = users.filter(u => u.room === currentRoom);
+  if (!userListEl || !window.allRooms) return;
 
   userListEl.innerHTML = "";
 
-  // --- AB HIER unverändert, aber mit roomUsers statt users
-  roomUsers.forEach(u => {
-    const li = document.createElement("li");
-    li.classList.add("fn-userlist-item");
+  window.allRooms.forEach(room => {
+    // Raumname
+    const roomHeader = document.createElement("div");
+    roomHeader.classList.add("fn-userlist-roomheader");
+    roomHeader.textContent = `${room.name}`;
+    userListEl.appendChild(roomHeader);
 
-    if (u.away) {
-      li.classList.add("fn-user-away");
+    // User die in diesem Raum sind
+    const roomUsers = users.filter(u => u.room === room.id);
+
+    if (roomUsers.length === 0) {
+      const empty = document.createElement("div");
+      empty.classList.add("fn-userlist-empty");
+      empty.textContent = "— keine User —";
+      userListEl.appendChild(empty);
+      return;
     }
 
-    const nameSpan = document.createElement("span");
-    nameSpan.classList.add("fn-user-name");
-    nameSpan.textContent = u.username;
-    li.appendChild(nameSpan);
+    roomUsers.forEach(u => {
+      const li = document.createElement("li");
+      li.classList.add("fn-userlist-item");
 
-    if (u.role && u.role !== "USER") {
-      const img = document.createElement("img");
-      img.classList.add("fn-role-badge");
-      img.src = `/BADGES/${u.role} - BADGE.png`;
-      img.alt = u.role;
-      li.appendChild(img);
-    }
+      if (u.away) li.classList.add("fn-user-away");
 
-    userListEl.appendChild(li);
-  }); 
+      const nameSpan = document.createElement("span");
+      nameSpan.classList.add("fn-user-name");
+      nameSpan.textContent = u.username;
+      li.appendChild(nameSpan);
 
-}// Suche
+      if (u.role && u.role !== "USER") {
+        const img = document.createElement("img");
+        img.classList.add("fn-role-badge");
+        img.src = `/BADGES/${u.role} - BADGE.png`;
+        img.alt = u.role;
+        li.appendChild(img);
+      }
+
+      userListEl.appendChild(li);
+    });
+  });
+}
+// Suche
   userSearchEl.addEventListener("input", () => {
     const term = userSearchEl.value.toLowerCase();
 
