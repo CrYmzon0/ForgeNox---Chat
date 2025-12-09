@@ -298,11 +298,11 @@ io.on("connection", (socket) => {
   username: cleanName,
   gender: gender || "",
   away: false,
-  currentRoom: "Lobby",
+  currentRoom: "lobby",
   role: getUserRole(cleanName)
 });
 
-    socket.join("Lobby");
+    socket.join("lobby");
     const sid = findSessionIdByUsername(cleanName);
     if (sid && userStates[sid]) {
       const state = userStates[sid];
