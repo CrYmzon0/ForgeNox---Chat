@@ -56,9 +56,9 @@
     // --------------------------------------------------
 
     socket.on("room-list", (serverRooms) => {
-      rooms = Array.isArray(serverRooms) ? serverRooms : [];
-      renderRooms();
-    });
+  rooms = Array.isArray(serverRooms) ? serverRooms : [];
+  renderRooms();
+});
 
     socket.on("room-changed", ({ roomId }) => {
   currentRoomId = roomId;
