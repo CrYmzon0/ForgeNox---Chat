@@ -271,10 +271,10 @@ function broadcastRoomState(io) {
     counts[roomId] = (counts[roomId] || 0) + 1;
   });
 
-  // 1. Raumliste senden
+  // Raumliste
   io.emit("room-list", getRoomsForClient(counts));
 
-  // 2. GLOBALE Userliste (alle User, egal welcher Raum)
+  // **Globale Userliste für ALLE Kunden**
   io.emit("user-list", getUserList(null));
 }
 
