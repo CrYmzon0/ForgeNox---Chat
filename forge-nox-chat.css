@@ -258,8 +258,10 @@ body.fn-body {
   padding: 0;
 }
 
-/* AWAY – grau + leicht transparent + kursiv */
-.fn-user-away .fn-user-name {
+/* AWAY – egal ob am <li> oder <span> */
+.fn-user-away,
+.fn-user-away .fn-user-name,
+.fn-room-user.fn-user-away .fn-user-name {
     color: #888 !important;
     font-style: italic !important;
     opacity: 0.6 !important;
