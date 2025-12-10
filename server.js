@@ -294,6 +294,8 @@ io.on("connection", (socket) => {
     if (sessionId && userStates[sessionId]) {
       const state = userStates[sessionId];
 
+      emitUserJoined(io, username);
+
       // alten Socket für diesen User entfernen, falls vorhanden
       for (const [id, u] of users) {
         if (u.username === cleanName) {
@@ -318,6 +320,7 @@ io.on("connection", (socket) => {
 
       socket.emit("room-changed", { roomId: state.currentRoom || "lobby" });
       broadcastRoomState(io);
+      emitUserJoined(io, username);
       return;
     }
 
