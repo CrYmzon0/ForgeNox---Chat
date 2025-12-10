@@ -1,12 +1,12 @@
 // rooms-client.js
-// Räume rendern und die Userliste unter dem aktiven Raum anzeigen
+// Räume rendern
 
 (function () {
   const socket = window.socket || io();
 
   window.addEventListener("DOMContentLoaded", () => {
     const roomListEl = document.getElementById("roomList");
-    const userListEl = document.getElementById("userList");
+    const userListEl = document.getElementById("userList"); // bleibt, wird aber hier nicht benutzt
     const roomTitleEl = document.querySelector("[data-room-title]");
 
     if (!roomListEl || !userListEl) return;
@@ -55,15 +55,17 @@
     // Socket-Events
     // --------------------------------------------------
 
+    // Raumliste vom Server
     socket.on("room-list", (roomsFromServer) => {
-  rooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
-  renderRooms();
-});
+      rooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
+      renderRooms();
+    });
 
+    // Aktueller Raum hat sich geändert
     socket.on("room-changed", ({ roomId }) => {
-  currentRoomId = roomId;
-  window.currentRoomId = roomId;   // ← NEU UND WICHTIG
-  renderRooms();
+      currentRoomId = roomId;
+      window.currentRoomId = roomId; // für andere Scripts, falls nötig
+      renderRooms();
 
       if (roomTitleEl) {
         const room = rooms.find((r) => r.id === roomId);
@@ -76,7 +78,6 @@
     socket.on("join-room-error", (data) => {
       if (!data || !data.message) return;
       alert(data.message);
-      
     });
 
     // --------------------------------------------------
