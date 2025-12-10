@@ -258,25 +258,9 @@ body.fn-body {
   padding: 0;
 }
 
-
-.fn-user-away {
-    opacity: 0.35;
-    filter: grayscale(80%);
-    color: #888 !important;
-}
-.fn-user-away::before {
-  color: gray;
-}
-
-.fn-user-away {
-  opacity: 0.4;
-  filter: grayscale(70%);
-  font-style: italic;
-}
-
-/* AWAY-STATUS (grau + kursiv) */
+/* AWAY – grau + leicht transparent + kursiv */
 .fn-user-away .fn-user-name {
     color: #888 !important;
     font-style: italic !important;
-    opacity: 0.6;
+    opacity: 0.6 !important;
 }
