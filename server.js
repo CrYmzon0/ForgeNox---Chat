@@ -467,57 +467,6 @@ app.post("/profile-show-password", (req, res) => {
   return res.json({ ok: true, password: pw });
 });
 
-  // CHAT MESSAGE
-  socket.on("chat-message", (data) => {
-    const user = users.get(socket.id);
-    if (!user) return;
-
-    const text = (data && data.text ? String(data.text) : "").trim();
-    if (!text) return;
-
-    const roomId = user.currentRoom || "lobby";
-
-    // nur an die anderen im Raum schicken, nicht an den Sender selbst
-    socket.to(roomId).emit("chat-message", {
-      username: user.username,
-      text,
-    });
-  });
-
-    // DISCONNECT
-    socket.on("disconnect", () => {
-    const user = users.get(socket.id);
-    if (!user) return;
-
-    const sessionId = findSessionIdByUsername(user.username);
-
-    if (sessionId && userStates[sessionId]) {
-      const state = userStates[sessionId];
-
-      state.away = true;
-      state.lastActive = Date.now();
-      user.away = true;  // ← wichtig für graue Anzeige
-
-      state.timeoutHandle = setTimeout(() => {
-        const diff = Date.now() - state.lastActive;
-
-        if (state.away && diff >= AWAY_TIMEOUT) {
-          emitUserLeft(io, user.username);
-
-          delete userStates[sessionId];
-          delete sessions[sessionId];
-          users.delete(socket.id);
-        }
-
-        broadcastRoomState(io);
-      }, AWAY_TIMEOUT);
-    } else {
-      // Fallback: User ohne Session direkt entfernen
-      users.delete(socket.id);
-      broadcastRoomState(io);
-    }
-  });
-
 // STATIC
 app.use(express.static(__dirname));
 
