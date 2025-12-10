@@ -58,7 +58,6 @@
         name.classList.add("fn-user-name");
         name.textContent = u.username;
 
-        userLi.appendChild(dot);
         userLi.appendChild(name);
 
         if (u.role && u.role !== "USER") {
