@@ -96,6 +96,13 @@
       renderRooms();
     });
 
+    // Überschrift aktualisieren
+const roomTitle = document.querySelector("[data-room-title]");
+if (roomTitle && window.allRooms) {
+    const r = window.allRooms.find(x => x.id === roomId);
+    if (r) roomTitle.textContent = r.name;
+}
+
     socket.on("join-room-error", (data) => {
     if (!data || !data.message) return;
     alert(data.message);  // oder ein eigenes Popup
