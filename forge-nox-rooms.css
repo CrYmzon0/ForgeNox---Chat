@@ -120,5 +120,11 @@
     height: 18px;
     margin-left: 6px;
     object-fit: contain;
-    opacity: 0.95;
+
+    display: inline-flex;      /* NEU */
+    align-items: center;       /* NEU */
+    justify-content: center;   /* NEU */
+
+    position: relative;
+    top: 1px;                  /* optional minimaler Feintuning */
 }

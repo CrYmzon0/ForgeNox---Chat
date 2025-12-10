@@ -54,9 +54,6 @@
         const userLi = document.createElement("li");
         userLi.classList.add("fn-room-user");
 
-        const dot = document.createElement("span");
-        dot.classList.add("dot");
-
         const name = document.createElement("span");
         name.classList.add("fn-user-name");
         name.textContent = u.username;

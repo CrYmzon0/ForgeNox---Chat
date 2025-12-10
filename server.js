@@ -284,30 +284,61 @@ function broadcastRoomState(io) {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // REGISTER USER
+
+//Register user
   socket.on("register-user", ({ username, gender }) => {
-    const cleanName = (username || "Gast").toString().slice(0, 30);
+    const sessionId = findSessionIdByUsername(username);
 
-    users.set(socket.id, {
-  username: cleanName,
-  gender: gender || "",
-  away: false,
-  currentRoom: "lobby",
-  role: getUserRole(cleanName)
-});
+    if (sessionId && userStates[sessionId]) {
+        // ===== USER EXISTIERT BEREITS (AWAY oder aktiv) =====
+        
+        // alten Socket löschen, falls vorhanden
+        const oldSocketId = [...users.entries()].find(([id, u]) => u.username === username)?.[0];
+        if (oldSocketId) {
+            users.delete(oldSocketId);
+        }
 
-    socket.join("lobby");
-    const sid = findSessionIdByUsername(cleanName);
-    if (sid && userStates[sid]) {
-      const state = userStates[sid];
-      state.away = false;
-      state.lastActive = Date.now();
+        // neuen Socket eintragen
+        users.set(socket.id, {
+            username,
+            gender,
+            away: false,
+            currentRoom: userStates[sessionId].currentRoom || "lobby",
+            role: getUserRole(username),
+        });
+
+        // Room joinen
+        socket.join(userStates[sessionId].currentRoom);
+
+        // Away-Flag zurücksetzen
+        userStates[sessionId].away = false;
+        userStates[sessionId].lastActive = Date.now();
+
+        socket.emit("room-changed", { roomId: userStates[sessionId].currentRoom });
+        broadcastRoomState(io);
+        return;
     }
 
+    // ===== USER IST NEU =====
+    // ➤ Existierenden User mit gleichem Namen löschen
+for (const [id, u] of users) {
+  if (u.username === cleanName) {
+    users.delete(id);
+    break;
+  }
+}
+    users.set(socket.id, {
+        username,
+        gender,
+        away: false,
+        currentRoom: "lobby",
+        role: getUserRole(username)
+    });
+
+    socket.join("lobby");
     socket.emit("room-changed", { roomId: "lobby" });
     broadcastRoomState(io);
-    emitUserJoined(io, cleanName);
-  });
+});
 
   // --------------------------------------------------
 // Profil-Info: Hat aktueller User ein Passwort?

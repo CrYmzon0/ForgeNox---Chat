@@ -253,15 +253,16 @@ body.fn-body {
 
 /* kleiner Punkt links */
 .fn-userlist-item::before {
-  content: "•";
-  color: #9a6aff;
-  margin-right: 6px;
-  font-size: 0.9rem;                      /* kleiner als vorher */
+  content: "";
+  margin: 0;
+  padding: 0;
 }
 
+
 .fn-user-away {
-  opacity: 0.4;
-  color: var(--fn-text-muted);
+    opacity: 0.35;
+    filter: grayscale(80%);
+    color: #888 !important;
 }
 .fn-user-away::before {
   color: gray;
