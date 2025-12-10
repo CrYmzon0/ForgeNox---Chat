@@ -167,7 +167,16 @@ app.get("/relogin", (req, res) => {
     return res.redirect("/");
   }
 
-  res.sendFile(path.join(__dirname, "relogin.html"));
+  // Cookie sicherstellen
+if (!req.cookies.sessionId) {
+    res.cookie("sessionId", sid, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: false,
+    });
+}
+
+res.sendFile(path.join(__dirname, "relogin.html"));
 });
 
 // --------------------------------------------------
@@ -301,6 +310,12 @@ socket.on("register-user", ({ username, gender }) => {
       if (u.username === cleanName) {
         users.delete(id);
         break;
+
+        // Falls ein disconnect-Timer läuft → stoppen
+if (state.timeoutHandle) {
+    clearTimeout(state.timeoutHandle);
+    state.timeoutHandle = null;
+}
       }
     }
 
@@ -422,7 +437,6 @@ socket.on("register-user", ({ username, gender }) => {
 
     // User bleibt in der users-Map → wird grau angezeigt
     user.away = true;
-    user.lastActive = Date.now();
 
     // passende Session suchen
     const sessionId = findSessionIdByUsername(user.username);
@@ -431,7 +445,6 @@ socket.on("register-user", ({ username, gender }) => {
       const state = userStates[sessionId];
 
       state.away = true;
-      state.lastActive = Date.now();
 
       // alten Timer löschen, falls vorhanden
       if (state.timeoutHandle) clearTimeout(state.timeoutHandle);

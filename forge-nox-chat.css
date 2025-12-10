@@ -273,3 +273,10 @@ body.fn-body {
   filter: grayscale(70%);
   font-style: italic;
 }
+
+/* AWAY-STATUS (grau + kursiv) */
+.fn-user-away .fn-user-name {
+    color: #888 !important;
+    font-style: italic !important;
+    opacity: 0.6;
+}
