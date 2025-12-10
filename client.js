@@ -118,6 +118,17 @@ window.addEventListener("DOMContentLoaded", () => {
     renderUserList(allUsers);
   });
 
+// --------------------------------------------------
+// Räume empfangen → global speichern
+// --------------------------------------------------
+socket.on("room-list", (roomsFromServer) => {
+  window.allRooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
+  allRooms = window.allRooms;
+
+  // Userliste neu rendern, da wir jetzt Räume haben
+  renderUserList(allUsers);
+});
+
   function renderUserList(users) {
   if (!userListEl || !window.allRooms) return;
 
