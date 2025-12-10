@@ -18,6 +18,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let username = "";
   let gender = "";
+  let persistentId = localStorage.getItem("fnx-id");
+if (!persistentId) {
+    persistentId = crypto.randomUUID();
+    localStorage.setItem("fnx-id", persistentId);
+}
 
   // globale Daten
   window.globalUsers = [];

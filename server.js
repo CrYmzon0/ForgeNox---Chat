@@ -285,62 +285,74 @@ io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
     // REGISTER USER
-  socket.on("register-user", ({ username, gender }) => {
-    const cleanName = (username || "Gast").toString().slice(0, 30);
+socket.on("register-user", ({ username, gender }) => {
+  const cleanName = (username || "Gast").toString().slice(0, 30);
 
-    // Prüfen, ob es schon eine Session mit diesem User gibt (Re-Login)
-    const sessionId = findSessionIdByUsername(cleanName);
+  // passende Session zu diesem Namen suchen (für Away-Rejoin)
+  const sessionId = findSessionIdByUsername(cleanName);
+  const state = sessionId ? userStates[sessionId] : null;
 
-    if (sessionId && userStates[sessionId]) {
-      const state = userStates[sessionId];
-
-      // alten Socket für diesen User entfernen, falls vorhanden
-      for (const [id, u] of users) {
-        if (u.username === cleanName) {
-          users.delete(id);
-          break;
-        }
+  // --------------------------------------------------
+  // FALL A: Session existiert → User kommt aus der 2-Min-Away-Phase zurück
+  // --------------------------------------------------
+  if (state) {
+    // alten Socket für diesen User entfernen, falls noch einer in users hängt
+    for (const [id, u] of users) {
+      if (u.username === cleanName) {
+        users.delete(id);
+        break;
       }
-
-      // neuen Socket eintragen
-      users.set(socket.id, {
-        username: cleanName,
-        gender: gender || "",
-        away: false,
-        currentRoom: state.currentRoom || "lobby",
-        role: getUserRole(cleanName),
-      });
-
-      // in den gespeicherten Raum (oder Lobby) joinen
-      socket.join(state.currentRoom || "lobby");
-
-      // Away-Status zurücksetzen
-      state.away = false;
-      state.lastActive = Date.now();
-
-      socket.emit("room-changed", { roomId: state.currentRoom || "lobby" });
-      broadcastRoomState(io);
-      // genau EINE Join-Systemnachricht
-      emitUserJoined(io, cleanName);
-      return;
     }
 
-    // Neuer User (noch keine Session gefunden)
+    const roomId = state.currentRoom || "lobby";
+
+    // neuen Socket in users eintragen
     users.set(socket.id, {
       username: cleanName,
-      gender: gender || "",
+      gender: state.gender || gender || "",
       away: false,
-      currentRoom: "lobby",
+      currentRoom: roomId,
       role: getUserRole(cleanName),
     });
 
-    socket.join("lobby");
+    // in den gemerkten Raum joinen
+    socket.join(roomId);
 
-    socket.emit("room-changed", { roomId: "lobby" });
+    // Away-Status in der Session zurücksetzen
+    const wasAway = state.away === true;
+    state.away = false;
+    state.lastActive = Date.now();
+
+    // UI aktualisieren
+    socket.emit("room-changed", { roomId });
     broadcastRoomState(io);
-    // Join-Systemnachricht auch für neue User
-    emitUserJoined(io, cleanName);
+
+    // Join-Systemnachricht NUR, wenn der User vorher wirklich "away" war
+    // (beim ersten Login ist state.away typischerweise false → keine Doppelmeldung)
+    if (wasAway) {
+      emitUserJoined(io, cleanName);
+    }
+    return;
+  }
+
+  // --------------------------------------------------
+  // FALL B: keine Session gefunden → Fallback: "normaler" Erst-Login
+  // (sollte selten vorkommen, da /login userStates eigentlich anlegt)
+  // --------------------------------------------------
+  users.set(socket.id, {
+    username: cleanName,
+    gender: gender || "",
+    away: false,
+    currentRoom: "lobby",
+    role: getUserRole(cleanName),
   });
+
+  socket.join("lobby");
+
+  socket.emit("room-changed", { roomId: "lobby" });
+  broadcastRoomState(io);
+  emitUserJoined(io, cleanName);
+});
 
   // JOIN ROOM
   socket.on("join-room", ({ roomId, password }) => {
@@ -404,39 +416,50 @@ io.on("connection", (socket) => {
   });
 
   // DISCONNECT
-  socket.on("disconnect", () => {
+  // DISCONNECT
+socket.on("disconnect", () => {
     const user = users.get(socket.id);
     if (!user) return;
 
+    // User bleibt in der users-Liste → wird grau angezeigt
     user.away = true;
+    user.lastActive = Date.now();
 
+    // Session finden
     const sessionId = findSessionIdByUsername(user.username);
 
     if (sessionId && userStates[sessionId]) {
-      const state = userStates[sessionId];
+        const state = userStates[sessionId];
 
-      state.away = true;
-      state.lastActive = Date.now();
+        state.away = true;
+        state.lastActive = Date.now();
 
-      state.timeoutHandle = setTimeout(() => {
-        const diff = Date.now() - state.lastActive;
+        // Timer für endgültiges Entfernen
+        if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
 
-        if (state.away && diff >= AWAY_TIMEOUT) {
-          emitUserLeft(io, user.username);
+        state.timeoutHandle = setTimeout(() => {
+            const diff = Date.now() - state.lastActive;
 
-          delete userStates[sessionId];
-          delete sessions[sessionId];
-          users.delete(socket.id);
-        }
+            // Erst nach 2 Minuten wirklich abmelden
+            if (state.away && diff >= AWAY_TIMEOUT) {
+                emitUserLeft(io, user.username);
 
-        broadcastRoomState(io);
-      }, AWAY_TIMEOUT);
-    } else {
-      // keine Session → direkt löschen
-      users.delete(socket.id);
-      broadcastRoomState(io);
+                delete userStates[sessionId];
+                delete sessions[sessionId];
+
+                // JETZT erst final löschen
+                users.forEach((val, key) => {
+                    if (val.username === user.username) users.delete(key);
+                });
+            }
+
+            broadcastRoomState(io);
+        }, AWAY_TIMEOUT);
     }
-  });
+
+    // Wichtig: Nutzer NICHT löschen → sonst nicht grau und kein Rejoin
+    broadcastRoomState(io);
+});
 });
 
   // --------------------------------------------------
