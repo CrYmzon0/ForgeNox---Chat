@@ -284,50 +284,44 @@ function broadcastRoomState(io) {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-
-  // REGISTER USER (Login + ReLogin)
+  // REGISTER USER
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
+
+    // Prüfen, ob es schon eine Session mit diesem User gibt (Re-Login)
     const sessionId = findSessionIdByUsername(cleanName);
 
-    // ===== ReLogin innerhalb der Away-Zeit =====
     if (sessionId && userStates[sessionId]) {
       const state = userStates[sessionId];
 
-      // alten Socket für diesen User entfernen
+      // alten Socket für diesen User entfernen, falls vorhanden
       for (const [id, u] of users) {
-        if (u.username === state.username) {
+        if (u.username === cleanName) {
           users.delete(id);
           break;
         }
       }
 
       // neuen Socket eintragen
-      const roomId = state.currentRoom || "lobby";
       users.set(socket.id, {
-        username: state.username,
+        username: cleanName,
         gender: state.gender,
         away: false,
-        currentRoom: roomId,
-        role: getUserRole(state.username),
+        currentRoom: state.currentRoom || "lobby",
+        role: getUserRole(cleanName),
       });
 
-      socket.join(roomId);
+      socket.join(state.currentRoom || "lobby");
 
-      // Away-Status zurücksetzen
       state.away = false;
       state.lastActive = Date.now();
-      if (state.timeoutHandle) {
-        clearTimeout(state.timeoutHandle);
-        state.timeoutHandle = null;
-      }
 
-      socket.emit("room-changed", { roomId });
+      socket.emit("room-changed", { roomId: state.currentRoom || "lobby" });
       broadcastRoomState(io);
       return;
     }
 
-    // ===== Neuer User =====
+    // Neuer User (noch keine Session gefunden)
     users.set(socket.id, {
       username: cleanName,
       gender: gender || "",
@@ -339,28 +333,102 @@ io.on("connection", (socket) => {
     socket.join("lobby");
     socket.emit("room-changed", { roomId: "lobby" });
     broadcastRoomState(io);
+    emitUserJoined(io, cleanName);
   });
 
+  // JOIN ROOM
+  socket.on("join-room", ({ roomId, password }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
 
-    // ===== USER IST NEU =====
-    // ➤ Existierenden User mit gleichem Namen löschen
-for (const [id, u] of users) {
-  if (u.username === cleanName) {
-    users.delete(id);
-    break;
-  }
-}
-    users.set(socket.id, {
-        username,
-        gender,
-        away: false,
-        currentRoom: "lobby",
-        role: getUserRole(username)
-    });
+    const room = findRoom(roomId);
+    if (!room) {
+      return socket.emit("join-room-error", { message: "Raum existiert nicht." });
+    }
 
-    socket.join("lobby");
-    socket.emit("room-changed", { roomId: "lobby" });
+    // verschlossene Räume: nur Team
+    if (room.type === "locked") {
+      const role = user.role || "USER";
+      const TEAM = ["INHABER", "ADMIN", "TEAMLEITER", "MOD", "JUNIOR MOD"];
+      if (!TEAM.includes(role)) {
+        return socket.emit("join-room-error", { message: "Dieser Raum ist verschlossen." });
+      }
+    }
+
+    // private Räume: Passwort
+    if (room.type === "private") {
+      if (!room.password || room.password !== password) {
+        return socket.emit("join-room-error", { message: "Falsches Passwort." });
+      }
+    }
+
+    const oldRoomId = user.currentRoom;
+
+    socket.leave(oldRoomId);
+    socket.join(room.id);
+
+    user.currentRoom = room.id;
+
+    // Session-State für Away aktualisieren
+    const sid = findSessionIdByUsername(user.username);
+    if (sid && userStates[sid]) {
+      userStates[sid].currentRoom = room.id;
+      userStates[sid].away = false;
+      userStates[sid].lastActive = Date.now();
+    }
+
+    socket.emit("room-changed", { roomId: room.id });
     broadcastRoomState(io);
+  });
+
+  // CHAT MESSAGE
+  socket.on("chat-message", (data) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    const text = (data && data.text ? String(data.text) : "").trim();
+    if (!text) return;
+
+    const roomId = user.currentRoom || "lobby";
+
+    socket.to(roomId).emit("chat-message", {
+      username: user.username,
+      text,
+    });
+  });
+
+  // DISCONNECT
+  socket.on("disconnect", () => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    const sessionId = findSessionIdByUsername(user.username);
+
+    if (sessionId && userStates[sessionId]) {
+      const state = userStates[sessionId];
+
+      state.away = true;
+      state.lastActive = Date.now();
+
+      state.timeoutHandle = setTimeout(() => {
+        const diff = Date.now() - state.lastActive;
+
+        if (state.away && diff >= AWAY_TIMEOUT) {
+          emitUserLeft(io, user.username);
+
+          delete userStates[sessionId];
+          delete sessions[sessionId];
+          users.delete(socket.id);
+        }
+
+        broadcastRoomState(io);
+      }, AWAY_TIMEOUT);
+    } else {
+      // keine Session → direkt löschen
+      users.delete(socket.id);
+      broadcastRoomState(io);
+    }
+  });
 });
 
   // --------------------------------------------------
