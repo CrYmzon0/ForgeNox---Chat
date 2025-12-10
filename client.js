@@ -121,13 +121,6 @@ window.addEventListener("DOMContentLoaded", () => {
     renderRooms();
   });
 
-  // Überschrift aktualisieren
-const roomTitle = document.querySelector("[data-room-title]");
-if (roomTitle && window.allRooms) {
-    const r = window.allRooms.find(x => x.id === roomId);
-    if (r) roomTitle.textContent = r.name;
-}
-
   // ========================================
   // RÄUME + User in den Räumen rendern
   // ========================================

@@ -92,10 +92,18 @@
     });
 
     socket.on("room-changed", ({ roomId }) => {
-      currentRoomId = roomId;
-      renderRooms();
-    });
-    
+    currentRoomId = roomId;
+
+    // UI aktualisieren
+    const roomTitle = document.querySelector("[data-room-title]");
+    if (roomTitle && window.allRooms) {
+        const r = window.allRooms.find(x => x.id === roomId);
+        if (r) roomTitle.textContent = r.name;
+    }
+
+    renderRooms();
+});
+
     socket.on("join-room-error", (data) => {
     if (!data || !data.message) return;
     alert(data.message);  // oder ein eigenes Popup
