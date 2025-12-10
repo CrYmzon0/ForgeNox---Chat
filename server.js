@@ -467,47 +467,6 @@ app.post("/profile-show-password", (req, res) => {
   return res.json({ ok: true, password: pw });
 });
 
-  // JOIN ROOM
-  socket.on("join-room", ({ roomId, password }) => {
-    const user = users.get(socket.id);
-    if (!user) return;
-
-    const room = findRoom(roomId);
-    if (!room) return socket.emit("join-room-error", { message: "Raum existiert nicht." });
-
-    if (room.type === "locked") {
-    const role = user.role || "USER";
-
-    const TEAM = ["INHABER", "ADMIN", "TEAMLEITER", "MOD", "JUNIOR MOD"];
-
-    // Team-Mitglieder dürfen locked Räume betreten
-    if (!TEAM.includes(role)) {
-        return socket.emit("join-room-error", { message: "Dieser Raum ist verschlossen." });
-    }
-}
-
-    if (room.type === "private") {
-      if (!room.password || room.password !== password) {
-        return socket.emit("join-room-error", { message: "Falsches Passwort." });
-      }
-    }
-
-    const oldRoomId = user.currentRoom;
-
-    socket.leave(oldRoomId);
-    socket.join(room.id);
-
-    user.currentRoom = room.id;
-
-        const sid = findSessionIdByUsername(user.username);
-    if (sid && userStates[sid]) {
-      userStates[sid].currentRoom = room.id;
-    }
-
-    socket.emit("room-changed", { roomId: room.id });
-    broadcastRoomState(io);
-  });
-
   // CHAT MESSAGE
   socket.on("chat-message", (data) => {
     const user = users.get(socket.id);
