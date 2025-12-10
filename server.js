@@ -415,51 +415,56 @@ socket.on("register-user", ({ username, gender }) => {
     });
   });
 
-  // DISCONNECT
-  // DISCONNECT
-socket.on("disconnect", () => {
+    // DISCONNECT
+  socket.on("disconnect", () => {
     const user = users.get(socket.id);
     if (!user) return;
 
-    // User bleibt in der users-Liste → wird grau angezeigt
+    // User bleibt in der users-Map → wird grau angezeigt
     user.away = true;
     user.lastActive = Date.now();
 
-    // Session finden
+    // passende Session suchen
     const sessionId = findSessionIdByUsername(user.username);
 
     if (sessionId && userStates[sessionId]) {
-        const state = userStates[sessionId];
+      const state = userStates[sessionId];
 
-        state.away = true;
-        state.lastActive = Date.now();
+      state.away = true;
+      state.lastActive = Date.now();
 
-        // Timer für endgültiges Entfernen
-        if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
+      // alten Timer löschen, falls vorhanden
+      if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
 
-        state.timeoutHandle = setTimeout(() => {
-            const diff = Date.now() - state.lastActive;
+      // neuer 2-Minuten-Timer
+      state.timeoutHandle = setTimeout(() => {
+        const diff = Date.now() - state.lastActive;
 
-            // Erst nach 2 Minuten wirklich abmelden
-            if (state.away && diff >= AWAY_TIMEOUT) {
-                emitUserLeft(io, user.username);
+        // erst nach 2 Minuten wirklich komplett abmelden
+        if (state.away && diff >= AWAY_TIMEOUT) {
+          emitUserLeft(io, user.username);
 
-                delete userStates[sessionId];
-                delete sessions[sessionId];
+          delete userStates[sessionId];
+          delete sessions[sessionId];
 
-                // JETZT erst final löschen
-                users.forEach((val, key) => {
-                    if (val.username === user.username) users.delete(key);
-                });
+          // jetzt ALLE Sockets mit diesem Namen entfernen
+          users.forEach((val, key) => {
+            if (val.username === user.username) {
+              users.delete(key);
             }
+          });
+        }
 
-            broadcastRoomState(io);
-        }, AWAY_TIMEOUT);
+        broadcastRoomState(io);
+      }, AWAY_TIMEOUT);
+    } else {
+      // keine Session → direkt löschen
+      users.delete(socket.id);
     }
 
-    // Wichtig: Nutzer NICHT löschen → sonst nicht grau und kein Rejoin
+    // Sofort grauen Away-Status an alle broadcasten
     broadcastRoomState(io);
-});
+  });
 });
 
   // --------------------------------------------------

@@ -170,25 +170,29 @@ if (!persistentId) {
         ul.classList.add("fn-room-users");
 
         usersInRoom.forEach((u) => {
-          const userLi = document.createElement("li");
-          userLi.classList.add("fn-room-user");
-          if (u.away) userLi.classList.add("fn-user-away");
+  const userLi = document.createElement("li");
+  userLi.classList.add("fn-room-user");
 
-          const name = document.createElement("span");
-          name.classList.add("fn-user-name");
-          name.textContent = u.username;
-          userLi.appendChild(name);
+  // Away-Status → grau/kursiv
+  if (u.away) {
+    userLi.classList.add("fn-user-away");
+  }
 
-          if (u.role && u.role !== "USER") {
-            const img = document.createElement("img");
-            img.classList.add("fn-role-badge");
-            img.src = `/BADGES/${u.role} - BADGE.png`;
-            img.alt = u.role;
-            userLi.appendChild(img);
-          }
+  const name = document.createElement("span");
+  name.classList.add("fn-user-name");
+  name.textContent = u.username;
+  userLi.appendChild(name);
 
-          ul.appendChild(userLi);
-        });
+  if (u.role && u.role !== "USER") {
+    const img = document.createElement("img");
+    img.classList.add("fn-role-badge");
+    img.src = `/BADGES/${u.role} - BADGE.png`;
+    img.alt = u.role;
+    userLi.appendChild(img);
+  }
+
+  ul.appendChild(userLi);
+});
 
         li.appendChild(ul);
       }
