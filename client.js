@@ -1,11 +1,11 @@
 // client.js
 
-// eine globale Socket-Verbindung für alle Scripts (wird auch von system-messages.js benutzt)
+// globale Socket-Verbindung
 window.socket = window.socket || io();
 const socket = window.socket;
 
 window.addEventListener("DOMContentLoaded", () => {
-  // DOM-Elemente
+  // DOMs
   const messagesEl = document.getElementById("messages");
   const inputEl =
     document.getElementById("chatInput") ||
@@ -13,17 +13,20 @@ window.addEventListener("DOMContentLoaded", () => {
   const sendBtn =
     document.getElementById("sendBtn") ||
     document.querySelector(".fn-chat-input button");
-  const userListEl = document.getElementById("userList");
   const userSearchEl = document.getElementById("userSearch");
+  const roomListEl = document.getElementById("roomList");
 
   let username = "";
   let gender = "";
-  let allUsers = [];
-  let allRooms = [];
 
-  // --------------------------------------------------
-  // Nachricht im Chat anzeigen
-  // --------------------------------------------------
+  // globale Daten
+  window.globalUsers = [];
+  window.allRooms = [];
+  let currentRoomId = "lobby";
+
+  // ========================================
+  // CHAT — Nachrichten anzeigen
+  // ========================================
   function addMessage({ text, fromSelf = false, userName = "" }) {
     if (!messagesEl) return;
 
@@ -34,7 +37,6 @@ window.addEventListener("DOMContentLoaded", () => {
     meta.classList.add("fn-msg-meta");
 
     const displayName = userName || "User";
-
     const displayTime = new Date().toLocaleTimeString("de-DE", {
       hour: "2-digit",
       minute: "2-digit",
@@ -53,9 +55,6 @@ window.addEventListener("DOMContentLoaded", () => {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  // --------------------------------------------------
-  // Nachricht an Server senden
-  // --------------------------------------------------
   function sendMessage() {
     if (!inputEl) return;
 
@@ -63,19 +62,12 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!text) return;
 
     addMessage({ text, fromSelf: true, userName: username });
-
     socket.emit("chat-message", { text });
 
     inputEl.value = "";
   }
 
-  if (sendBtn) {
-    sendBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      sendMessage();
-    });
-  }
-
+  if (sendBtn) sendBtn.addEventListener("click", sendMessage);
   if (inputEl) {
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -85,9 +77,9 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --------------------------------------------------
-  // Login-Infos holen
-  // --------------------------------------------------
+  // ========================================
+  // LOGIN-INFO holen und User registrieren
+  // ========================================
   fetch("/me")
     .then((res) => res.json())
     .then((data) => {
@@ -100,131 +92,129 @@ window.addEventListener("DOMContentLoaded", () => {
       gender = data.gender || "";
       window.currentUsername = username;
 
-      socket.emit("register-user", {
-        username,
-        gender,
-      });
+      socket.emit("register-user", { username, gender });
     });
 
-    socket.on("user-list", users => {
-  window.globalUsers = users;  // <-- damit rooms-client Zugriff hat
-});
-
-  // --------------------------------------------------
-  // USERLISTE + SUCHE + BADGES + AWAY
-  // --------------------------------------------------
-
-  // WICHTIG:
-  // user-list bedeutet jetzt wieder: "ALLE User global"
+  // ========================================
+  // SERVER → globale Userliste
+  // ========================================
   socket.on("user-list", (users) => {
-    allUsers = users;
-    updateUserCounter();
-    renderUserList(allUsers);
+    window.globalUsers = users;
+    renderRooms(); // Räume neu rendern, weil User sich geändert haben
   });
 
-// --------------------------------------------------
-// Räume empfangen → global speichern
-// --------------------------------------------------
-socket.on("room-list", (roomsFromServer) => {
-  window.allRooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
-  allRooms = window.allRooms;
+  // ========================================
+  // SERVER → Raumliste
+  // ========================================
+  socket.on("room-list", (roomsFromServer) => {
+    window.allRooms = Array.isArray(roomsFromServer)
+      ? roomsFromServer
+      : [];
+    renderRooms();
+  });
 
-  // Userliste neu rendern, da wir jetzt Räume haben
-  renderUserList(allUsers);
-});
+  // ========================================
+  // Raumwechsel vom Server bestätigt
+  // ========================================
+  socket.on("room-changed", ({ roomId }) => {
+    currentRoomId = roomId;
+    renderRooms();
+  });
 
-      // --------------------------------------------------
-    // Räume + zugehörige User rendern
-    // --------------------------------------------------
-    function renderRooms() {
-      roomListEl.innerHTML = "";
+  // ========================================
+  // RÄUME + User in den Räumen rendern
+  // ========================================
+  function renderRooms() {
+    if (!roomListEl) return;
+    roomListEl.innerHTML = "";
 
-      rooms.forEach((room) => {
-        const li = document.createElement("li");
-        li.classList.add("fn-room", `fn-room--${room.type}`);
-        li.dataset.roomId = room.id;
-        li.dataset.roomType = room.type;
+    const rooms = window.allRooms || [];
+    const users = window.globalUsers || [];
 
-        if (room.id === currentRoomId) {
-          li.classList.add("fn-room--active");
-        }
+    rooms.forEach((room) => {
+      const li = document.createElement("li");
+      li.classList.add("fn-room", `fn-room--${room.type}`);
+      li.dataset.roomId = room.id;
+      li.dataset.roomType = room.type;
 
-        // HEADER
-        const header = document.createElement("div");
-        header.classList.add("fn-room-header");
+      if (room.id === currentRoomId) {
+        li.classList.add("fn-room--active");
+      }
 
-        const nameSpan = document.createElement("span");
-        nameSpan.classList.add("fn-room-name");
-        nameSpan.textContent = room.name;
+      // ROOM HEADER
+      const header = document.createElement("div");
+      header.classList.add("fn-room-header");
 
-        const countSpan = document.createElement("span");
-        countSpan.classList.add("fn-room-count");
-        countSpan.textContent = room.userCount || 0;
+      const nameSpan = document.createElement("span");
+      nameSpan.classList.add("fn-room-name");
+      nameSpan.textContent = room.name;
 
-        header.appendChild(nameSpan);
-        header.appendChild(countSpan);
-        li.appendChild(header);
+      const countSpan = document.createElement("span");
+      countSpan.classList.add("fn-room-count");
+      countSpan.textContent = room.userCount || 0;
 
-        // USERLISTE UNTER DEM RAUM
-        const usersInRoom = (window.globalUsers || []).filter(
-          (u) => u.room === room.id
-        );
+      header.appendChild(nameSpan);
+      header.appendChild(countSpan);
+      li.appendChild(header);
 
-        if (usersInRoom.length > 0) {
-          const ul = document.createElement("ul");
-          ul.classList.add("fn-room-users");
+      // USER IN DIESEM RAUM
+      const usersInRoom = users.filter((u) => u.room === room.id);
 
-          usersInRoom.forEach((u) => {
-            const userLi = document.createElement("li");
-            userLi.classList.add("fn-room-user");
-            if (u.away) userLi.classList.add("fn-user-away");
+      if (usersInRoom.length > 0) {
+        const ul = document.createElement("ul");
+        ul.classList.add("fn-room-users");
 
-            const name = document.createElement("span");
-            name.classList.add("fn-user-name");
-            name.textContent = u.username;
-            userLi.appendChild(name);
+        usersInRoom.forEach((u) => {
+          const userLi = document.createElement("li");
+          userLi.classList.add("fn-room-user");
+          if (u.away) userLi.classList.add("fn-user-away");
 
-            if (u.role && u.role !== "USER") {
-              const img = document.createElement("img");
-              img.classList.add("fn-role-badge");
-              img.src = `/BADGES/${u.role} - BADGE.png`;
-              img.alt = u.role;
-              userLi.appendChild(img);
-            }
+          const name = document.createElement("span");
+          name.classList.add("fn-user-name");
+          name.textContent = u.username;
+          userLi.appendChild(name);
 
-            ul.appendChild(userLi);
-          });
+          if (u.role && u.role !== "USER") {
+            const img = document.createElement("img");
+            img.classList.add("fn-role-badge");
+            img.src = `/BADGES/${u.role} - BADGE.png`;
+            img.alt = u.role;
+            userLi.appendChild(img);
+          }
 
-          li.appendChild(ul);
-        }
+          ul.appendChild(userLi);
+        });
 
-        roomListEl.appendChild(li);
-      });
-    }
+        li.appendChild(ul);
+      }
 
-// Suche
-  userSearchEl.addEventListener("input", () => {
-    const term = userSearchEl.value.toLowerCase();
+      roomListEl.appendChild(li);
+    });
+  }
 
-    if (!term) {
-      renderUserList(allUsers);
+  // ========================================
+  // Raum anklicken → join-room senden
+  // ========================================
+  roomListEl.addEventListener("click", (event) => {
+    const li = event.target.closest(".fn-room");
+    if (!li) return;
+
+    const roomId = li.dataset.roomId;
+    const roomType = li.dataset.roomType;
+
+    if (roomType === "private") {
+      const pwd = window.prompt("Passwort eingeben:");
+      if (!pwd) return;
+      socket.emit("join-room", { roomId, password: pwd });
       return;
     }
 
-    const filtered = allUsers.filter((u) =>
-      u.username.toLowerCase().includes(term)
-    );
-
-    renderUserList(filtered);
+    socket.emit("join-room", { roomId });
   });
 
-  function updateUserCounter() {
-    userSearchEl.placeholder = `User suchen (${allUsers.length} online)`;
-  }
-
-  // --------------------------------------------------
-  // Chatnachrichten anderer User empfangen
-  // --------------------------------------------------
+  // ========================================
+  // CHAT-NACHRICHTEN ANDERER USER
+  // ========================================
   socket.on("chat-message", (data) => {
     addMessage({
       text: data.text,
@@ -232,5 +222,4 @@ socket.on("room-list", (roomsFromServer) => {
       userName: data.username,
     });
   });
-
 });
