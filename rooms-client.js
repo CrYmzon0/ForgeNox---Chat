@@ -96,6 +96,11 @@
       renderRooms();
     });
 
+    socket.on("join-room-error", (data) => {
+    if (!data || !data.message) return;
+    alert(data.message);  // oder ein eigenes Popup
+});
+
     // --------------------------------------------------
     // Räume anklicken
     // --------------------------------------------------
