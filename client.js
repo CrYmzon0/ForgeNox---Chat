@@ -106,6 +106,10 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+    socket.on("user-list", users => {
+  window.globalUsers = users;  // <-- damit rooms-client Zugriff hat
+});
+
   // --------------------------------------------------
   // USERLISTE + SUCHE + BADGES + AWAY
   // --------------------------------------------------

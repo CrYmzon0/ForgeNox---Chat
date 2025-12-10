@@ -13,64 +13,73 @@
     // Räume + zugehörige User rendern
     // --------------------------------------------------
     function renderRooms() {
-      roomListEl.innerHTML = "";
+  roomListEl.innerHTML = "";
 
-      rooms.forEach(room => {
-        const li = document.createElement("li");
-        li.classList.add("fn-room");
-        li.dataset.roomId = room.id;
-        li.dataset.roomType = room.type;
+  rooms.forEach(room => {
+    const li = document.createElement("li");
+    li.classList.add("fn-room", `fn-room--${room.type}`);
+    li.dataset.roomId = room.id;
+    li.dataset.roomType = room.type;
 
-        if (room.id === currentRoomId) {
-          li.classList.add("fn-room--active");
-        }
-
-        // Header
-        const header = document.createElement("div");
-        header.classList.add("fn-room-header");
-
-        const nameSpan = document.createElement("span");
-        nameSpan.classList.add("fn-room-name");
-        nameSpan.textContent = room.name;
-
-        const countSpan = document.createElement("span");
-        countSpan.classList.add("fn-room-count");
-        countSpan.textContent = room.userCount || 0;
-
-        header.appendChild(nameSpan);
-        header.appendChild(countSpan);
-        li.appendChild(header);
-
-        // Userliste in diesem Raum
-        const ul = document.createElement("ul");
-        ul.classList.add("fn-room-userlist");
-
-        const roomUsers = users.filter(u => u.room === room.id);
-
-        if (roomUsers.length === 0) {
-          const empty = document.createElement("li");
-          empty.textContent = "— keine User —";
-          ul.appendChild(empty);
-        } else {
-          roomUsers.forEach(u => {
-            const userLi = document.createElement("li");
-            userLi.textContent = u.username;
-
-            if (u.role && u.role !== "USER") {
-              const img = document.createElement("img");
-              img.src = `/BADGES/${u.role} - BADGE.png`;
-              img.classList.add("fn-role-badge");
-              userLi.appendChild(img);
-            }
-
-            ul.appendChild(userLi);
-          });
-        }
-
-        li.appendChild(ul);
-        roomListEl.appendChild(li);
-      });
+    if (room.id === currentRoomId) {
+      li.classList.add("fn-room--active");
     }
+
+    // HEADER
+    const header = document.createElement("div");
+    header.classList.add("fn-room-header");
+
+    const nameSpan = document.createElement("span");
+    nameSpan.classList.add("fn-room-name");
+    nameSpan.textContent = room.name;
+
+    const countSpan = document.createElement("span");
+    countSpan.classList.add("fn-room-count");
+    countSpan.textContent = room.userCount || 0;
+
+    header.appendChild(nameSpan);
+    header.appendChild(countSpan);
+    li.appendChild(header);
+
+    // USERLISTE
+    const usersInRoom = (window.globalUsers || []).filter(
+      u => u.room === room.id
+    );
+
+    if (usersInRoom.length > 0) {
+      const ul = document.createElement("ul");
+      ul.classList.add("fn-room-users");
+
+      usersInRoom.forEach(u => {
+        const userLi = document.createElement("li");
+        userLi.classList.add("fn-room-user");
+
+        const dot = document.createElement("span");
+        dot.classList.add("dot");
+
+        const name = document.createElement("span");
+        name.classList.add("fn-user-name");
+        name.textContent = u.username;
+
+        userLi.appendChild(dot);
+        userLi.appendChild(name);
+
+        if (u.role && u.role !== "USER") {
+          const img = document.createElement("img");
+          img.classList.add("fn-role-badge");
+          img.src = `/BADGES/${u.role} - BADGE.png`;
+          userLi.appendChild(img);
+        }
+
+        ul.appendChild(userLi);
+      });
+
+      li.appendChild(ul);
+    }
+
+    roomListEl.appendChild(li);
+  });
+}
 
     // --------------------------------------------------
     // Socket Events
