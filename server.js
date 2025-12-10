@@ -284,7 +284,7 @@ function broadcastRoomState(io) {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // REGISTER USER
+    // REGISTER USER
   socket.on("register-user", ({ username, gender }) => {
     const cleanName = (username || "Gast").toString().slice(0, 30);
 
@@ -292,37 +292,38 @@ io.on("connection", (socket) => {
     const sessionId = findSessionIdByUsername(cleanName);
 
     if (sessionId && userStates[sessionId]) {
-  const state = userStates[sessionId];
+      const state = userStates[sessionId];
 
-  // User kommt zurück → EINMAL begrüßen
-  emitUserJoined(io, username);
+      // alten Socket für diesen User entfernen, falls vorhanden
+      for (const [id, u] of users) {
+        if (u.username === cleanName) {
+          users.delete(id);
+          break;
+        }
+      }
 
-  // alten Socket entfernen etc.
-  for (const [id, u] of users) {
-    if (u.username === cleanName) {
-      users.delete(id);
-      break;
+      // neuen Socket eintragen
+      users.set(socket.id, {
+        username: cleanName,
+        gender: gender || "",
+        away: false,
+        currentRoom: state.currentRoom || "lobby",
+        role: getUserRole(cleanName),
+      });
+
+      // in den gespeicherten Raum (oder Lobby) joinen
+      socket.join(state.currentRoom || "lobby");
+
+      // Away-Status zurücksetzen
+      state.away = false;
+      state.lastActive = Date.now();
+
+      socket.emit("room-changed", { roomId: state.currentRoom || "lobby" });
+      broadcastRoomState(io);
+      // genau EINE Join-Systemnachricht
+      emitUserJoined(io, cleanName);
+      return;
     }
-  }
-
-  users.set(socket.id, {
-    username: cleanName,
-    gender: state.gender,
-    away: false,
-    currentRoom: state.currentRoom || "lobby",
-    role: getUserRole(cleanName),
-  });
-
-  socket.join(state.currentRoom || "lobby");
-
-  state.away = false;
-  state.lastActive = Date.now();
-
-  socket.emit("room-changed", { roomId: state.currentRoom || "lobby" });
-  broadcastRoomState(io);
-
-  return;
-}
 
     // Neuer User (noch keine Session gefunden)
     users.set(socket.id, {
@@ -334,8 +335,10 @@ io.on("connection", (socket) => {
     });
 
     socket.join("lobby");
+
     socket.emit("room-changed", { roomId: "lobby" });
     broadcastRoomState(io);
+    // Join-Systemnachricht auch für neue User
     emitUserJoined(io, cleanName);
   });
 
@@ -404,6 +407,8 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const user = users.get(socket.id);
     if (!user) return;
+
+    user.away = true;
 
     const sessionId = findSessionIdByUsername(user.username);
 
