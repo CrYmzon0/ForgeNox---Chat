@@ -128,3 +128,36 @@
     position: relative;
     top: 1px;                  /* optional minimaler Feintuning */
 }
+
+/* Userliste innerhalb der Räume */
+.fn-room-users {
+  list-style: none;
+  margin: 4px 0 6px;
+  padding: 0 14px 6px;
+}
+
+.fn-room-user {
+  list-style: none;
+  display: flex;
+  align-items: center;   /* Badge auf gleiche Höhe wie Name */
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.fn-room-user .fn-user-name {
+  flex: 1;
+}
+
+/* Badges in der Raum-Userliste */
+.fn-room-user .fn-role-badge {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  margin-left: 4px;
+}
+
+/* Away: grau + kursiv */
+.fn-room-user.fn-user-away .fn-user-name {
+  opacity: 0.5;
+  font-style: italic;
+}

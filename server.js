@@ -285,39 +285,62 @@ io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
 
-//Register user
+  // REGISTER USER (Login + ReLogin)
   socket.on("register-user", ({ username, gender }) => {
-    const sessionId = findSessionIdByUsername(username);
+    const cleanName = (username || "Gast").toString().slice(0, 30);
+    const sessionId = findSessionIdByUsername(cleanName);
 
+    // ===== ReLogin innerhalb der Away-Zeit =====
     if (sessionId && userStates[sessionId]) {
-        // ===== USER EXISTIERT BEREITS (AWAY oder aktiv) =====
-        
-        // alten Socket löschen, falls vorhanden
-        const oldSocketId = [...users.entries()].find(([id, u]) => u.username === username)?.[0];
-        if (oldSocketId) {
-            users.delete(oldSocketId);
+      const state = userStates[sessionId];
+
+      // alten Socket für diesen User entfernen
+      for (const [id, u] of users) {
+        if (u.username === state.username) {
+          users.delete(id);
+          break;
         }
+      }
 
-        // neuen Socket eintragen
-        users.set(socket.id, {
-            username,
-            gender,
-            away: false,
-            currentRoom: userStates[sessionId].currentRoom || "lobby",
-            role: getUserRole(username),
-        });
+      // neuen Socket eintragen
+      const roomId = state.currentRoom || "lobby";
+      users.set(socket.id, {
+        username: state.username,
+        gender: state.gender,
+        away: false,
+        currentRoom: roomId,
+        role: getUserRole(state.username),
+      });
 
-        // Room joinen
-        socket.join(userStates[sessionId].currentRoom);
+      socket.join(roomId);
 
-        // Away-Flag zurücksetzen
-        userStates[sessionId].away = false;
-        userStates[sessionId].lastActive = Date.now();
+      // Away-Status zurücksetzen
+      state.away = false;
+      state.lastActive = Date.now();
+      if (state.timeoutHandle) {
+        clearTimeout(state.timeoutHandle);
+        state.timeoutHandle = null;
+      }
 
-        socket.emit("room-changed", { roomId: userStates[sessionId].currentRoom });
-        broadcastRoomState(io);
-        return;
+      socket.emit("room-changed", { roomId });
+      broadcastRoomState(io);
+      return;
     }
+
+    // ===== Neuer User =====
+    users.set(socket.id, {
+      username: cleanName,
+      gender: gender || "",
+      away: false,
+      currentRoom: "lobby",
+      role: getUserRole(cleanName),
+    });
+
+    socket.join("lobby");
+    socket.emit("room-changed", { roomId: "lobby" });
+    broadcastRoomState(io);
+  });
+
 
     // ===== USER IST NEU =====
     // ➤ Existierenden User mit gleichem Namen löschen
@@ -408,6 +431,11 @@ app.post("/profile-show-password", (req, res) => {
 
     user.currentRoom = room.id;
 
+        const sid = findSessionIdByUsername(user.username);
+    if (sid && userStates[sid]) {
+      userStates[sid].currentRoom = room.id;
+    }
+
     socket.emit("room-changed", { roomId: room.id });
     broadcastRoomState(io);
   });
@@ -430,39 +458,38 @@ app.post("/profile-show-password", (req, res) => {
   });
 
     // DISCONNECT
-  socket.on("disconnect", () => {
-  const user = users.get(socket.id);
+    socket.on("disconnect", () => {
+    const user = users.get(socket.id);
+    if (!user) return;
 
-  if (!user) return;
+    const sessionId = findSessionIdByUsername(user.username);
 
-  const sessionId = findSessionIdByUsername(user.username);
+    if (sessionId && userStates[sessionId]) {
+      const state = userStates[sessionId];
 
-  if (sessionId && userStates[sessionId]) {
-    const state = userStates[sessionId];
+      state.away = true;
+      state.lastActive = Date.now();
+      user.away = true;  // ← wichtig für graue Anzeige
 
-    state.away = true;
-    state.lastActive = Date.now();
+      state.timeoutHandle = setTimeout(() => {
+        const diff = Date.now() - state.lastActive;
 
-    state.timeoutHandle = setTimeout(() => {
-      const diff = Date.now() - state.lastActive;
+        if (state.away && diff >= AWAY_TIMEOUT) {
+          emitUserLeft(io, user.username);
 
-      if (state.away && diff >= AWAY_TIMEOUT) {
-        emitUserLeft(io, user.username);
+          delete userStates[sessionId];
+          delete sessions[sessionId];
+          users.delete(socket.id);
+        }
 
-        delete userStates[sessionId];
-        delete sessions[sessionId];
-
-        // << HIER und NUR HIER löschen
-        users.delete(socket.id);
-      }
-
+        broadcastRoomState(io);
+      }, AWAY_TIMEOUT);
+    } else {
+      // Fallback: User ohne Session direkt entfernen
+      users.delete(socket.id);
       broadcastRoomState(io);
-    }, AWAY_TIMEOUT);
-  }
-
-  broadcastRoomState(io);
-});
-});
+    }
+  });
 
 // STATIC
 app.use(express.static(__dirname));

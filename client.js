@@ -133,52 +133,75 @@ socket.on("room-list", (roomsFromServer) => {
   renderUserList(allUsers);
 });
 
-  function renderUserList(users) {
-  if (!userListEl || !window.allRooms) return;
+      // --------------------------------------------------
+    // Räume + zugehörige User rendern
+    // --------------------------------------------------
+    function renderRooms() {
+      roomListEl.innerHTML = "";
 
-  userListEl.innerHTML = "";
+      rooms.forEach((room) => {
+        const li = document.createElement("li");
+        li.classList.add("fn-room", `fn-room--${room.type}`);
+        li.dataset.roomId = room.id;
+        li.dataset.roomType = room.type;
 
-  window.allRooms.forEach(room => {
-    // Raumname
-    const roomHeader = document.createElement("div");
-    roomHeader.classList.add("fn-userlist-roomheader");
-    roomHeader.textContent = `${room.name}`;
-    userListEl.appendChild(roomHeader);
+        if (room.id === currentRoomId) {
+          li.classList.add("fn-room--active");
+        }
 
-    // User die in diesem Raum sind
-    const roomUsers = users.filter(u => u.room === room.id);
+        // HEADER
+        const header = document.createElement("div");
+        header.classList.add("fn-room-header");
 
-    if (roomUsers.length === 0) {
-      const empty = document.createElement("div");
-      empty.classList.add("fn-userlist-empty");
-      empty.textContent = "— keine User —";
-      userListEl.appendChild(empty);
-      return;
+        const nameSpan = document.createElement("span");
+        nameSpan.classList.add("fn-room-name");
+        nameSpan.textContent = room.name;
+
+        const countSpan = document.createElement("span");
+        countSpan.classList.add("fn-room-count");
+        countSpan.textContent = room.userCount || 0;
+
+        header.appendChild(nameSpan);
+        header.appendChild(countSpan);
+        li.appendChild(header);
+
+        // USERLISTE UNTER DEM RAUM
+        const usersInRoom = (window.globalUsers || []).filter(
+          (u) => u.room === room.id
+        );
+
+        if (usersInRoom.length > 0) {
+          const ul = document.createElement("ul");
+          ul.classList.add("fn-room-users");
+
+          usersInRoom.forEach((u) => {
+            const userLi = document.createElement("li");
+            userLi.classList.add("fn-room-user");
+            if (u.away) userLi.classList.add("fn-user-away");
+
+            const name = document.createElement("span");
+            name.classList.add("fn-user-name");
+            name.textContent = u.username;
+            userLi.appendChild(name);
+
+            if (u.role && u.role !== "USER") {
+              const img = document.createElement("img");
+              img.classList.add("fn-role-badge");
+              img.src = `/BADGES/${u.role} - BADGE.png`;
+              img.alt = u.role;
+              userLi.appendChild(img);
+            }
+
+            ul.appendChild(userLi);
+          });
+
+          li.appendChild(ul);
+        }
+
+        roomListEl.appendChild(li);
+      });
     }
 
-    roomUsers.forEach(u => {
-      const li = document.createElement("li");
-      li.classList.add("fn-userlist-item");
-
-      if (u.away) li.classList.add("fn-user-away");
-
-      const nameSpan = document.createElement("span");
-      nameSpan.classList.add("fn-user-name");
-      nameSpan.textContent = u.username;
-      li.appendChild(nameSpan);
-
-      if (u.role && u.role !== "USER") {
-        const img = document.createElement("img");
-        img.classList.add("fn-role-badge");
-        img.src = `/BADGES/${u.role} - BADGE.png`;
-        img.alt = u.role;
-        li.appendChild(img);
-      }
-
-      userListEl.appendChild(li);
-    });
-  });
-}
 // Suche
   userSearchEl.addEventListener("input", () => {
     const term = userSearchEl.value.toLowerCase();
