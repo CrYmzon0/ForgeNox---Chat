@@ -174,14 +174,20 @@ if (!persistentId) {
   const userLi = document.createElement("li");
   userLi.classList.add("fn-room-user");
 
-  // Away-Status → grau/kursiv
-  if (u.away) {
-    userLi.classList.add("fn-user-away");
-  }
-
   const name = document.createElement("span");
   name.classList.add("fn-user-name");
   name.textContent = u.username;
+
+  // Away-Status → direkt stylen (unabhängig vom CSS)
+  if (u.away) {
+    userLi.classList.add("fn-user-away"); // falls du später CSS nutzen willst
+
+    // Harter visueller Away-Look:
+    name.style.color = "#888";
+    name.style.fontStyle = "italic";
+    name.style.opacity = "0.6";
+  }
+
   userLi.appendChild(name);
 
   if (u.role && u.role !== "USER") {
