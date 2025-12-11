@@ -431,64 +431,70 @@ if (state.timeoutHandle) {
   });
 
     // DISCONNECT
-  socket.on("disconnect", () => {
+socket.on("disconnect", () => {
     const user = users.get(socket.id);
     if (!user) return;
 
-    // User bleibt in der users-Map → wird grau angezeigt
+    // User als away markieren
     user.away = true;
 
-    // WICHTIG: aktuellen Raum konservieren (sonst wird away-User nie angezeigt)
-const roomId = user.currentRoom || "lobby";
+    // WICHTIG: aktuellen Raum sichern
+    const roomId = user.currentRoom || "lobby";
 
-// passende Session suchen und Raum speichern
-const sid = findSessionIdByUsername(user.username);
-if (sid && userStates[sid]) {
-    userStates[sid].currentRoom = roomId;
-}
-user.lastActive = Date.now(); // MUSS wieder rein
+    // User-Map AKTUALISIEREN → sonst verliert getUserList() den Raum!
+    users.set(socket.id, {
+        ...user,
+        away: true,
+        currentRoom: roomId
+    });
 
     // passende Session suchen
     const sessionId = findSessionIdByUsername(user.username);
 
     if (sessionId && userStates[sessionId]) {
-      const state = userStates[sessionId];
+        const state = userStates[sessionId];
 
-      state.away = true;
-state.lastActive = Date.now(); // auch hier MUSS rein
+        // Away korrekt setzen
+        state.away = true;
 
-      // alten Timer löschen, falls vorhanden
-      if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
+        // aktueller Raum MUSS gesetzt werden (kritisch!)
+        state.currentRoom = roomId;
 
-      // neuer 2-Minuten-Timer
-      state.timeoutHandle = setTimeout(() => {
-        const diff = Date.now() - state.lastActive;
+        // Zeitpunkt des Disconnects
+        state.lastActive = Date.now();
 
-        // erst nach 2 Minuten wirklich komplett abmelden
-        if (state.away && diff >= AWAY_TIMEOUT) {
-          emitUserLeft(io, user.username);
+        // alten Timer löschen
+        if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
 
-          delete userStates[sessionId];
-          delete sessions[sessionId];
+        // neuen 2-Minuten-Timer setzen
+        state.timeoutHandle = setTimeout(() => {
+            const diff = Date.now() - state.lastActive;
 
-          // jetzt ALLE Sockets mit diesem Namen entfernen
-          users.forEach((val, key) => {
-            if (val.username === user.username) {
-              users.delete(key);
+            // wenn er 2 Minuten weg und NICHT wiedergekommen ist → endgültig offline
+            if (state.away && diff >= AWAY_TIMEOUT) {
+                emitUserLeft(io, user.username);
+
+                delete userStates[sessionId];
+                delete sessions[sessionId];
+
+                // ALLE Einträge aus der users-Map entfernen
+                users.forEach((val, key) => {
+                    if (val.username === user.username) {
+                        users.delete(key);
+                    }
+                });
             }
-          });
-        }
 
-        broadcastRoomState(io);
-      }, AWAY_TIMEOUT);
+            broadcastRoomState(io);
+        }, AWAY_TIMEOUT);
     } else {
-      // keine Session → direkt löschen
-      users.delete(socket.id);
+        // Keine Session → sofort löschen
+        users.delete(socket.id);
     }
 
-    // Sofort grauen Away-Status an alle broadcasten
+    // Jetzt sofort an alle broadcasten → Away-Status sichtbar machen
     broadcastRoomState(io);
-  });
+});
 });
 
   // --------------------------------------------------
