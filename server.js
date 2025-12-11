@@ -437,6 +437,15 @@ if (state.timeoutHandle) {
 
     // User bleibt in der users-Map → wird grau angezeigt
     user.away = true;
+
+    // WICHTIG: aktuellen Raum konservieren (sonst wird away-User nie angezeigt)
+const roomId = user.currentRoom || "lobby";
+
+// passende Session suchen und Raum speichern
+const sid = findSessionIdByUsername(user.username);
+if (sid && userStates[sid]) {
+    userStates[sid].currentRoom = roomId;
+}
 user.lastActive = Date.now(); // MUSS wieder rein
 
     // passende Session suchen
