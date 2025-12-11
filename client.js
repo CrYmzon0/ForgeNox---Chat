@@ -103,28 +103,31 @@ if (!persistentId) {
   // ========================================
   // SERVER → globale Userliste
   // ========================================
-  socket.on("user-list", (users) => {
+    socket.on("user-list", (users) => {
     console.log("USERLIST:", users);
     window.globalUsers = users;
-    renderRooms(); // Räume neu rendern, weil User sich geändert haben
+    renderRooms();
+    applyAwayStyles();   // <-- NEU
   });
 
   // ========================================
   // SERVER → Raumliste
   // ========================================
-  socket.on("room-list", (roomsFromServer) => {
+    socket.on("room-list", (roomsFromServer) => {
     window.allRooms = Array.isArray(roomsFromServer)
       ? roomsFromServer
       : [];
     renderRooms();
+    applyAwayStyles();   // <-- NEU
   });
 
   // ========================================
   // Raumwechsel vom Server bestätigt
   // ========================================
-  socket.on("room-changed", ({ roomId }) => {
+    socket.on("room-changed", ({ roomId }) => {
     currentRoomId = roomId;
     renderRooms();
+    applyAwayStyles();   // <-- NEU
   });
 
   // ========================================
@@ -146,6 +149,37 @@ if (!persistentId) {
       if (room.id === currentRoomId) {
         li.classList.add("fn-room--active");
       }
+
+        // ========================================
+  // AWAY-STYLING direkt am DOM anwenden
+  // ========================================
+  function applyAwayStyles() {
+    const users = window.globalUsers || [];
+    const awayMap = new Map(users.map(u => [u.username, !!u.away]));
+
+    // Alle User-Einträge im DOM durchgehen
+    document.querySelectorAll(".fn-room-user").forEach((li) => {
+      const nameEl = li.querySelector(".fn-user-name");
+      if (!nameEl) return;
+
+      const nameText = nameEl.textContent.trim();
+      const isAway = awayMap.get(nameText);
+
+      // Klasse setzen/entfernen
+      if (isAway) {
+        li.classList.add("fn-user-away");
+        // harter Style, unabhängig vom CSS
+        nameEl.style.color = "#888";
+        nameEl.style.fontStyle = "italic";
+        nameEl.style.opacity = "0.6";
+      } else {
+        li.classList.remove("fn-user-away");
+        nameEl.style.color = "";
+        nameEl.style.fontStyle = "";
+        nameEl.style.opacity = "";
+      }
+    });
+  }
 
       // ROOM HEADER
       const header = document.createElement("div");
