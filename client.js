@@ -104,6 +104,7 @@ if (!persistentId) {
   // SERVER → globale Userliste
   // ========================================
   socket.on("user-list", (users) => {
+    console.log("USERLIST:", users);
     window.globalUsers = users;
     renderRooms(); // Räume neu rendern, weil User sich geändert haben
   });
