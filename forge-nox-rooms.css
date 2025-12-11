@@ -161,3 +161,10 @@
   opacity: 0.5;
   font-style: italic;
 }
+
+/* Away-Grafik: Name grau + kursiv */
+.fn-room-user.fn-user-away .fn-user-name {
+    color: #888 !important;
+    opacity: 0.5 !important;
+    font-style: italic !important;
+}
