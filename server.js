@@ -437,6 +437,7 @@ if (state.timeoutHandle) {
 
     // User bleibt in der users-Map → wird grau angezeigt
     user.away = true;
+user.lastActive = Date.now(); // MUSS wieder rein
 
     // passende Session suchen
     const sessionId = findSessionIdByUsername(user.username);
@@ -445,6 +446,7 @@ if (state.timeoutHandle) {
       const state = userStates[sessionId];
 
       state.away = true;
+state.lastActive = Date.now(); // auch hier MUSS rein
 
       // alten Timer löschen, falls vorhanden
       if (state.timeoutHandle) clearTimeout(state.timeoutHandle);
