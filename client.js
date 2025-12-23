@@ -164,6 +164,7 @@ function applyAwayStyles() {
   // RÄUME + User in den Räumen rendern
   // ========================================
   function renderRooms() {
+    
     if (!roomListEl) return;
     roomListEl.innerHTML = "";
 
@@ -179,6 +180,18 @@ function applyAwayStyles() {
       if (room.id === currentRoomId) {
         li.classList.add("fn-room--active");
       }
+      
+      // ========================================
+// Raumtitel oben aktualisieren
+// ========================================
+function updateRoomTitle(roomId) {
+  if (!roomTitleEl) return;
+
+  const room = (window.allRooms || []).find(r => r.id === roomId);
+  if (!room) return;
+
+  roomTitleEl.textContent = room.name;
+}
 
       function updateCurrentRoomDisplay(roomId) {
   if (!roomDisplayEl) return;
