@@ -7,6 +7,7 @@ const socket = window.socket;
 window.addEventListener("DOMContentLoaded", () => {
   // DOMs
   const messagesEl = document.getElementById("messages");
+  const roomDisplayEl = document.getElementById("fn-current-room");
   const inputEl =
     document.getElementById("chatInput") ||
     document.querySelector(".fn-chat-input input");
@@ -127,7 +128,8 @@ if (!persistentId) {
     socket.on("room-changed", ({ roomId }) => {
     currentRoomId = roomId;
     renderRooms();
-    applyAwayStyles();   // <-- NEU
+    applyAwayStyles();
+    updateCurrentRoomDisplay(roomId);
   });
 
   // ========================================
@@ -150,7 +152,17 @@ if (!persistentId) {
         li.classList.add("fn-room--active");
       }
 
-        // ========================================
+      function updateCurrentRoomDisplay(roomId) {
+  if (!roomDisplayEl) return;
+
+  // Namen des Raums herausfinden
+  const room = (window.allRooms || []).find(r => r.id === roomId);
+  if (!room) return;
+
+  roomDisplayEl.textContent = room.name;
+}
+
+  // ========================================
   // AWAY-STYLING direkt am DOM anwenden
   // ========================================
   function applyAwayStyles() {
