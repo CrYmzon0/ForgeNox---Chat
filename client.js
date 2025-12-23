@@ -145,19 +145,32 @@ function applyAwayStyles() {
   // ========================================
     socket.on("room-list", (roomsFromServer) => {
   window.allRooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
+
   renderRooms();
   applyAwayStyles();
-  updateRoomTitle(currentRoomId);
-});
 
+  // Raumtitel auch beim initialen Laden setzen
+  const roomTitleEl = document.querySelector("[data-room-title]");
+  const room = (window.allRooms || []).find(r => r.id === currentRoomId);
+  if (roomTitleEl && room) {
+    roomTitleEl.textContent = room.name;
+  }
+});
   // ========================================
   // Raumwechsel vom Server bestätigt
   // ========================================
     socket.on("room-changed", ({ roomId }) => {
   currentRoomId = roomId;
+
   renderRooms();
   applyAwayStyles();
-  updateRoomTitle(roomId);
+
+  // Raumtitel oben aktualisieren (ohne extra Funktion)
+  const roomTitleEl = document.querySelector("[data-room-title]");
+  const room = (window.allRooms || []).find(r => r.id === roomId);
+  if (roomTitleEl && room) {
+    roomTitleEl.textContent = room.name;
+  }
 });
 
   // ========================================
@@ -180,7 +193,7 @@ function applyAwayStyles() {
       if (room.id === currentRoomId) {
         li.classList.add("fn-room--active");
       }
-      
+
       // ========================================
 // Raumtitel oben aktualisieren
 // ========================================
