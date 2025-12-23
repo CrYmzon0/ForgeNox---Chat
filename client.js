@@ -16,6 +16,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".fn-chat-input button");
   const userSearchEl = document.getElementById("userSearch");
   const roomListEl = document.getElementById("roomList");
+  const roomTitleEl = document.querySelector("[data-room-title]");
 
   let username = "";
   let gender = "";
@@ -112,25 +113,52 @@ if (!persistentId) {
   });
 
   // ========================================
+// AWAY-STYLING direkt am DOM anwenden
+// ========================================
+function applyAwayStyles() {
+  const users = window.globalUsers || [];
+  const awayMap = new Map(users.map(u => [String(u.username || "").trim(), !!u.away]));
+
+  document.querySelectorAll(".fn-room-user").forEach((li) => {
+    const nameEl = li.querySelector(".fn-user-name");
+    if (!nameEl) return;
+
+    const nameText = nameEl.textContent.trim();
+    const isAway = awayMap.get(nameText);
+
+    if (isAway) {
+      li.classList.add("fn-user-away");
+      nameEl.style.color = "#888";
+      nameEl.style.fontStyle = "italic";
+      nameEl.style.opacity = "0.6";
+    } else {
+      li.classList.remove("fn-user-away");
+      nameEl.style.color = "";
+      nameEl.style.fontStyle = "";
+      nameEl.style.opacity = "";
+    }
+  });
+}
+
+  // ========================================
   // SERVER → Raumliste
   // ========================================
     socket.on("room-list", (roomsFromServer) => {
-    window.allRooms = Array.isArray(roomsFromServer)
-      ? roomsFromServer
-      : [];
-    renderRooms();
-    applyAwayStyles();   // <-- NEU
-  });
+  window.allRooms = Array.isArray(roomsFromServer) ? roomsFromServer : [];
+  renderRooms();
+  applyAwayStyles();
+  updateRoomTitle(currentRoomId);
+});
 
   // ========================================
   // Raumwechsel vom Server bestätigt
   // ========================================
     socket.on("room-changed", ({ roomId }) => {
-    currentRoomId = roomId;
-    renderRooms();
-    applyAwayStyles();
-    updateCurrentRoomDisplay(roomId);
-  });
+  currentRoomId = roomId;
+  renderRooms();
+  applyAwayStyles();
+  updateRoomTitle(roomId);
+});
 
   // ========================================
   // RÄUME + User in den Räumen rendern
@@ -160,6 +188,13 @@ if (!persistentId) {
   if (!room) return;
 
   roomDisplayEl.textContent = room.name;
+}
+
+function updateRoomTitle(roomId) {
+  if (!roomTitleEl) return;
+  const room = (window.allRooms || []).find(r => r.id === roomId);
+  if (!room) return;
+  roomTitleEl.textContent = room.name;
 }
 
   // ========================================
